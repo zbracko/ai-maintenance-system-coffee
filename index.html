@@ -4,7 +4,29 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image" href="\assets\favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-    <title>Vite + React + TS</title>
+    <title>AI Coffee Maintenance System</title>
+    
+    <!-- Runtime environment variables injection for Amplify -->
+    <script>
+      // This script runs before the main app and can access server-side environment variables
+      // Amplify can inject environment variables here through server-side rendering or build-time replacement
+      window.ENV_CONFIG = {
+        VITE_OPENAI_API_KEY: '%%VITE_OPENAI_API_KEY%%',
+        // Add other environment variables as needed
+      };
+      
+      // Clean up placeholder values
+      Object.keys(window.ENV_CONFIG).forEach(key => {
+        if (window.ENV_CONFIG[key].startsWith('%%') && window.ENV_CONFIG[key].endsWith('%%')) {
+          window.ENV_CONFIG[key] = ''; // Remove placeholder if not replaced
+        }
+      });
+      
+      // Make environment variables available globally
+      Object.assign(window, window.ENV_CONFIG);
+      
+      console.log('🔧 Environment variables loaded:', Object.keys(window.ENV_CONFIG));
+    </script>
   </head>
   <body>
     <div id="root"></div>

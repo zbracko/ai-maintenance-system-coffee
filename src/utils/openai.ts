@@ -8,16 +8,44 @@
 import { demoWorkOrders, demoPastLogs, demoMachineOptions } from '../data/demoData';
 import { demoConfig } from '../config/demoConfig';
 
-// OpenAI Configuration
-const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY || '';
+// OpenAI Configuration with fallback for Amplify deployment
+const getOpenAIKey = (): string => {
+  // Try Vite environment variable first (build-time)
+  if (import.meta.env.VITE_OPENAI_API_KEY) {
+    return import.meta.env.VITE_OPENAI_API_KEY;
+  }
+  
+  // Fallback: Try to get from window.ENV_CONFIG (runtime - Amplify injection)
+  if (typeof window !== 'undefined' && (window as any).ENV_CONFIG?.VITE_OPENAI_API_KEY) {
+    return (window as any).ENV_CONFIG.VITE_OPENAI_API_KEY;
+  }
+  
+  // Fallback: Try to get from window object directly (runtime - Amplify can inject this)
+  if (typeof window !== 'undefined' && (window as any).VITE_OPENAI_API_KEY) {
+    return (window as any).VITE_OPENAI_API_KEY;
+  }
+  
+  // Fallback: Try alternate environment variable names for compatibility
+  if (typeof window !== 'undefined' && (window as any).REACT_APP_OPENAI_API_KEY) {
+    return (window as any).REACT_APP_OPENAI_API_KEY;
+  }
+  
+  return '';
+};
+
+const OPENAI_API_KEY = getOpenAIKey();
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 
 // Debug logging for environment variables
-console.log('🌍 Environment Variables Debug (Vite):');
+console.log('🌍 Environment Variables Debug (Vite + Amplify):');
 console.log(`   - NODE_ENV: ${import.meta.env.MODE}`);
 console.log(`   - All VITE_ vars:`, Object.keys(import.meta.env).filter(key => key.startsWith('VITE_')));
-console.log(`   - VITE_OPENAI_API_KEY exists: ${!!import.meta.env.VITE_OPENAI_API_KEY}`);
-console.log(`   - Raw env value: ${import.meta.env.VITE_OPENAI_API_KEY ? '[REDACTED]' : 'undefined'}`);
+console.log(`   - import.meta.env.VITE_OPENAI_API_KEY exists: ${!!import.meta.env.VITE_OPENAI_API_KEY}`);
+console.log(`   - window.ENV_CONFIG exists: ${typeof window !== 'undefined' && !!(window as any).ENV_CONFIG}`);
+console.log(`   - window.ENV_CONFIG.VITE_OPENAI_API_KEY exists: ${typeof window !== 'undefined' && !!(window as any).ENV_CONFIG?.VITE_OPENAI_API_KEY}`);
+console.log(`   - window.VITE_OPENAI_API_KEY exists: ${typeof window !== 'undefined' && !!(window as any).VITE_OPENAI_API_KEY}`);
+console.log(`   - window.REACT_APP_OPENAI_API_KEY exists: ${typeof window !== 'undefined' && !!(window as any).REACT_APP_OPENAI_API_KEY}`);
+console.log(`   - Final API key source: ${OPENAI_API_KEY ? 'Found' : 'Not found'}`);
 
 // Debug logging for OpenAI usage
 console.log(`🔑 OpenAI API Key configured: ${OPENAI_API_KEY ? 'Yes' : 'No'} (Length: ${OPENAI_API_KEY?.length || 0})`);

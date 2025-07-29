@@ -6,7 +6,11 @@ frontend:
         - npm ci --cache .npm --prefer-offline
     build:
       commands:
+        - echo "Building with environment variables..."
+        - echo "VITE_OPENAI_API_KEY is set: $([[ -n "$VITE_OPENAI_API_KEY" ]] && echo "Yes" || echo "No")"
         - npm run build
+        - echo "Injecting runtime environment variables..."
+        - sed -i "s/%%VITE_OPENAI_API_KEY%%/$VITE_OPENAI_API_KEY/g" dist/index.html
   artifacts:
     baseDirectory: dist
     files:
