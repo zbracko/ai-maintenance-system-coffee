@@ -7,10 +7,10 @@ frontend:
     build:
       commands:
         - echo "Building with environment variables..."
-        - echo "VITE_OPENAI_API_KEY is set: $([[ -n "$VITE_OPENAI_API_KEY" ]] && echo "Yes" || echo "No")"
+        - 'echo "VITE_OPENAI_API_KEY is set: $(if [ -n "$VITE_OPENAI_API_KEY" ]; then echo "Yes"; else echo "No"; fi)"'
         - npm run build
         - echo "Injecting runtime environment variables..."
-        - sed -i "s/%%VITE_OPENAI_API_KEY%%/$VITE_OPENAI_API_KEY/g" dist/index.html
+        - 'sed -i "s/%%VITE_OPENAI_API_KEY%%/$VITE_OPENAI_API_KEY/g" dist/index.html'
   artifacts:
     baseDirectory: dist
     files:
