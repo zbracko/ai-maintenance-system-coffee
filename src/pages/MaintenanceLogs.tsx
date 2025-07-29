@@ -369,39 +369,106 @@ const MaintenanceLogs: React.FC = () => {
 
   const generatePDFReport = () => {
     const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.width;
+    const pageHeight = doc.internal.pageSize.height;
+    const margin = 20;
+    const maxWidth = pageWidth - 2 * margin;
+    
+    // Helper function to clean text for PDF
+    const cleanTextForPDF = (text: string): string => {
+      return String(text || '')
+        .replace(/[\u{1F600}-\u{1F64F}]/gu, '') // Remove emoticons
+        .replace(/[\u{1F300}-\u{1F5FF}]/gu, '') // Remove misc symbols  
+        .replace(/[\u{1F680}-\u{1F6FF}]/gu, '') // Remove transport symbols
+        .replace(/[\u{2600}-\u{26FF}]/gu, '')   // Remove misc symbols
+        .replace(/[\u{2700}-\u{27BF}]/gu, '')   // Remove dingbats
+        .replace(/[^\x00-\x7F]/g, '')           // Remove non-ASCII characters
+        .replace(/\s+/g, ' ')                   // Normalize whitespace
+        .trim();
+    };
+
+    // Helper function to add wrapped text with proper page breaks
+    const addWrappedText = (text: string, x: number, y: number, fontSize: number): number => {
+      doc.setFontSize(fontSize);
+      const cleanText = cleanTextForPDF(text);
+      const lines = doc.splitTextToSize(cleanText, maxWidth);
+      
+      let currentY = y;
+      
+      for (let i = 0; i < lines.length; i++) {
+        // Check if we need a new page
+        if (currentY > pageHeight - 30) {
+          doc.addPage();
+          currentY = 20;
+        }
+        
+        doc.text(lines[i], x, currentY);
+        currentY += fontSize * 0.4; // Line spacing
+      }
+      
+      return currentY + 5; // Add some spacing after the text block
+    };
     
     // Header
     doc.setFontSize(20);
-    doc.text('Maintenance Logs Report', 20, 20);
+    doc.text('Maintenance Logs Report', margin, 20);
     
     doc.setFontSize(12);
-    doc.text(`Generated: ${new Date().toLocaleString()}`, 20, 35);
-    doc.text(`Total Logs: ${filteredLogs.length}`, 20, 45);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, margin, 35);
+    doc.text(`Total Logs: ${filteredLogs.length}`, margin, 45);
     
     let yPosition = 60;
     
     filteredLogs.forEach((log, index) => {
-      if (yPosition > 250) {
+      // Check if we need a new page for the log header
+      if (yPosition > pageHeight - 100) {
         doc.addPage();
         yPosition = 20;
       }
       
+      // Log header
       doc.setFontSize(14);
-      doc.text(`${log.workOrder} - ${log.machine}`, 20, yPosition);
-      yPosition += 10;
+      doc.setFont(undefined, 'bold');
+      yPosition = addWrappedText(`${log.workOrder} - ${log.machine}`, margin, yPosition, 14);
       
+      // Basic info
+      doc.setFont(undefined, 'normal');
       doc.setFontSize(10);
-      doc.text(`Date: ${log.date} ${log.time} | Technician: ${log.technician}`, 20, yPosition);
-      yPosition += 7;
-      doc.text(`Type: ${log.type} | Status: ${log.status} | Priority: ${log.priority}`, 20, yPosition);
-      yPosition += 7;
-      doc.text(`Description: ${log.description}`, 20, yPosition);
-      yPosition += 7;
-      if (log.notes) {
-        doc.text(`Notes: ${log.notes}`, 20, yPosition);
-        yPosition += 7;
+      yPosition = addWrappedText(`Date: ${log.date} ${log.time} | Technician: ${cleanTextForPDF(log.technician)}`, margin, yPosition, 10);
+      yPosition = addWrappedText(`Type: ${cleanTextForPDF(log.type)} | Status: ${cleanTextForPDF(log.status)} | Priority: ${cleanTextForPDF(log.priority)}`, margin, yPosition, 10);
+      
+      // Description
+      yPosition = addWrappedText(`Description: ${cleanTextForPDF(log.description)}`, margin, yPosition, 10);
+      
+      // Parts used (if any)
+      if (log.partsUsed && log.partsUsed.length > 0) {
+        const partsText = log.partsUsed.map(part => cleanTextForPDF(String(part))).join(', ');
+        yPosition = addWrappedText(`Parts Used: ${partsText}`, margin, yPosition, 10);
       }
-      yPosition += 10;
+      
+      // Notes (this is often the longest section for chat sessions)
+      if (log.notes) {
+        const notesText = cleanTextForPDF(log.notes);
+        // For very long notes (like chat sessions), truncate to prevent excessive length
+        const truncatedNotes = notesText.length > 1000 
+          ? notesText.substring(0, 1000) + '... [Content truncated for PDF summary]'
+          : notesText;
+        yPosition = addWrappedText(`Notes: ${truncatedNotes}`, margin, yPosition, 9);
+      }
+      
+      // Add separator between logs
+      yPosition += 15;
+      
+      // Add a line separator if not the last log
+      if (index < filteredLogs.length - 1) {
+        if (yPosition > pageHeight - 20) {
+          doc.addPage();
+          yPosition = 20;
+        }
+        doc.setDrawColor(200, 200, 200);
+        doc.line(margin, yPosition, pageWidth - margin, yPosition);
+        yPosition += 10;
+      }
     });
     
     doc.save('maintenance-logs-report.pdf');
