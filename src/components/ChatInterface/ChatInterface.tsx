@@ -652,15 +652,6 @@ const ChatInterface: React.FC = () => {
     }
   };
 
-  // Add machine selection response
-  const addMachineSelectionMessage = () => {
-    // AI handles all interactions, no manual selection needed
-    addBotMessage(
-      "I can help you with that! Please describe the issue you're experiencing with your coffee equipment, and I'll guide you through the solution.",
-      [], [], [], []
-    );
-  };
-
   // Enhanced contextual response matching with advanced typo tolerance
   const findBestResponse = (userText: string) => {
     const userTextLower = userText.toLowerCase()
@@ -1349,9 +1340,10 @@ const ChatInterface: React.FC = () => {
       userTextLower.includes('maintenance')
     ) && !conversationMemory.lastMentionedMachine && !conversationContext.selectedMachine;
     
+    // AI handles all machine selection naturally - no manual prompts needed
     if (needsMachineSelection) {
-      addMachineSelectionMessage();
-      return null; // Already handled
+      // Let AI handle machine selection through natural conversation
+      // No additional prompts needed - AI is smart enough to ask for clarification
     }
     
     // Use enhanced response matching with conversation memory
@@ -1543,12 +1535,10 @@ const ChatInterface: React.FC = () => {
             setCurrentOptions(openAIResponse.options);
           }
           
-          // Handle any required actions
+          // Handle any required actions - let AI manage everything naturally
           if (openAIResponse.requiresAction) {
-            // Could trigger specific UI states based on response
-            if (openAIResponse.text.toLowerCase().includes('select') && openAIResponse.text.toLowerCase().includes('machine')) {
-              addMachineSelectionMessage();
-            }
+            // AI handles all actions through natural conversation flow
+            // No manual intervention needed
           }
           
           setLoadingResponse(false);
