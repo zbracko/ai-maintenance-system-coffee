@@ -62,11 +62,6 @@ import 'slick-carousel/slick/slick-theme.css';
 
 import jsPDF from 'jspdf';
 
-import Picture2 from '../../assets/Picture2.png';
-import Picture3 from '../../assets/Picture3.png';
-import Picture4 from '../../assets/Picture4.png';
-import Picture5 from '../../assets/Picture5.png';
-
 import { coffeeManualSections, coffeePartsListFromManual } from '../../data/coffeeManualSections';
 import { 
   demoWorkOrders, 
@@ -224,10 +219,10 @@ const mockPastLogs: PastLog[] = demoPastLogs.map(log => ({
 }));
 
 const initialSafetyChecks: SafetyCheck[] = [
-  { label: 'Wear Heat-Resistant Gloves', image: Picture2, checked: false },
-  { label: 'Disconnect Power Supply', image: Picture3, checked: false },
-  { label: 'Allow Machine to Cool', image: Picture4, checked: false },
-  { label: 'Clear Work Area', image: Picture5, checked: false },
+  { label: 'Wear Heat-Resistant Gloves', image: '/assets/Picture2.png', checked: false },
+  { label: 'Disconnect Power Supply', image: '/assets/Picture3.png', checked: false },
+  { label: 'Allow Machine to Cool', image: '/assets/Picture4.png', checked: false },
+  { label: 'Clear Work Area', image: '/assets/Picture5.png', checked: false },
 ];
 
 const initialParts: PartOption[] = [
