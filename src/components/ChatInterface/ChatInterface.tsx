@@ -105,7 +105,6 @@ interface ConversationContext {
   step?: number;
   waitingForMachineSelection?: boolean;
   waitingForIssueType?: boolean;
-  troubleshootingFlow?: boolean;
 }
 
 // Enhanced response interface
@@ -166,9 +165,6 @@ type ChatFlow =
   | 'viewingManualSection'
   | 'viewingPartsListSection'
   | 'other'
-  | 'diagnosingStep1'
-  | 'diagnosingStep2'
-  | 'diagnosingStep3'
   | 'partsReplacedStep1'
   | 'partsReplacedStep2';
 
@@ -418,12 +414,10 @@ const ChatInterface: React.FC = () => {
   });
   const [conversationHistory, setConversationHistory] = useState<{ sender: 'user' | 'bot'; text: string; timestamp?: string }[]>([]);
   
-  const [showIssueTypeButtons, setShowIssueTypeButtons] = useState<boolean>(false);
   const [currentOptions, setCurrentOptions] = useState<string[]>([]);
   const [instructions, setInstructions] = useState<Instruction[]>([]);
   const [currentResponse, setCurrentResponse] = useState<string>('');
   const [activeWorkOrder, setActiveWorkOrder] = useState<string | null>(null);
-  const [troubleshootingStep, setTroubleshootingStep] = useState<number>(0);
   
   // ======== SHOWCASE MODE STATE ========
   const [showcaseMode, setShowcaseMode] = useState<boolean>(false);
@@ -628,21 +622,10 @@ const ChatInterface: React.FC = () => {
     }]);
     
     setCurrentOptions([]);
-    setShowIssueTypeButtons(false);
     
-    // If we're in an active troubleshooting session, handle contextually
-    if (activeWorkOrder && conversationContext.troubleshootingFlow) {
-      const contextualResponse = handleContextualFollowUp(option, activeWorkOrder);
-      if (contextualResponse) {
-        addBotMessage(contextualResponse.text, contextualResponse.images, contextualResponse.videos, contextualResponse.instructions, contextualResponse.options);
-        return;
-      }
-    }
-    
-    // Handle issue type selection for new troubleshooting
-    if (!activeWorkOrder && conversationContext.selectedMachine) {
-      handleIssueTypeSelection(option);
-    }
+    // Let AI handle all responses naturally through unified response
+    const response = getUnifiedResponse(option);
+    addBotMessage(response.text, response.images, response.videos, response.instructions, response.options);
   };
 
   // Enhanced addBotMessage to support images, videos, and dynamic conversations
@@ -666,70 +649,16 @@ const ChatInterface: React.FC = () => {
     // Handle dynamic conversation options
     if (options && options.length > 0) {
       setCurrentOptions(options);
-      setShowIssueTypeButtons(true);
     }
   };
 
   // Add machine selection response
   const addMachineSelectionMessage = () => {
-    // Skip machine selection dropdown, go directly to issue types
+    // AI handles all interactions, no manual selection needed
     addBotMessage(
-      "I can help you with that! What type of issue are you experiencing with your coffee equipment?",
-      [],
-      [],
-      [],
-      [
-        "Machine won't start",
-        "Poor coffee quality",
-        "Water/Steam issues", 
-        "Unusual sounds",
-        "Error messages",
-        "Regular maintenance"
-      ]
+      "I can help you with that! Please describe the issue you're experiencing with your coffee equipment, and I'll guide you through the solution.",
+      [], [], [], []
     );
-    
-    setShowIssueTypeButtons(true);
-  };
-
-  // Handle issue type selection
-  const handleIssueTypeSelection = (issueType: string) => {
-    setConversationContext(prev => ({ 
-      ...prev, 
-      currentIssue: issueType,
-      troubleshootingFlow: true,
-      step: 1
-    }));
-    
-    // Update OpenAI context with current issue
-    setOpenAIContext(prev => ({
-      ...prev,
-      currentIssue: issueType,
-      troubleshootingStep: 1
-    }));
-    
-    setShowIssueTypeButtons(false);
-    setCurrentOptions([]);
-    setTroubleshootingStep(1);
-    
-    // Add user message
-    setMessages(prev => [...prev, {
-      sender: 'user',
-      text: issueType
-    }]);
-    
-    // Update conversation history
-    setConversationHistory(prev => [...prev, {
-      sender: 'user',
-      text: issueType,
-      timestamp: new Date().toISOString()
-    }]);
-    
-    // Create work order ONLY for new issues, not for follow-ups
-    if (!activeWorkOrder) {
-      const machineNumber = conversationContext.selectedMachine || 'unknown';
-      const response = getDynamicResponse(issueType, machineNumber);
-      addBotMessage(response.text, response.images, response.videos, response.instructions, response.options);
-    }
   };
 
   // Enhanced contextual response matching with advanced typo tolerance
@@ -1311,9 +1240,7 @@ const ChatInterface: React.FC = () => {
       if (lc.includes('see') && lc.includes('work order')) return 'showingWorkOrders';
       if (lc.includes('create') && lc.includes('work order')) return 'creatingWorkOrder';
       if (lc.includes('view') && lc.includes('manual')) return 'showMaintenanceManual';
-      if (lc.includes('diagnose')) return 'diagnosingStep1';
-      if (lc.includes('help me fix machine')) return 'diagnosingStep1';
-      if (lc.includes('how do i fix')) return 'diagnosingStep1';
+      // AI handles all diagnostic flows naturally
       return 'other';
     }
     return chatFlow;
@@ -1481,7 +1408,7 @@ const ChatInterface: React.FC = () => {
   const handlePredefinedOptions = (userText: string) => {
     switch (userText) {
       case '🔧 Troubleshoot Machine 001':
-        setConversationContext({ selectedMachine: '001', troubleshootingFlow: true });
+        setConversationContext({ selectedMachine: '001' });
         const troubleshootResponse = getDynamicResponse('Machine won\'t start', '001');
         addBotMessage(troubleshootResponse.text, troubleshootResponse.images, troubleshootResponse.videos, troubleshootResponse.instructions, troubleshootResponse.options);
         return;
@@ -1563,9 +1490,6 @@ const ChatInterface: React.FC = () => {
         setCreateWOopen(true);
       } else if (newFlow === 'showMaintenanceManual') {
         showManualTableOfContents();
-      } else if (newFlow === 'diagnosingStep1') {
-        setChatFlow('diagnosingStep1');
-        addBotMessage(t('chat.diagnosingStep1'));
       } else {
         // ENHANCED: Use OpenAI for contextual responses
         setChatFlow('idle');
@@ -1583,8 +1507,7 @@ const ChatInterface: React.FC = () => {
             ...contextUpdates,
             selectedMachine: contextUpdates.selectedMachine || conversationContext.selectedMachine,
             currentIssue: contextUpdates.currentIssue || conversationContext.currentIssue,
-            activeWorkOrder: activeWorkOrder || undefined,
-            troubleshootingStep: contextUpdates.troubleshootingStep || troubleshootingStep
+            activeWorkOrder: activeWorkOrder || undefined
           };
           setOpenAIContext(updatedOpenAIContext);
           
@@ -1635,20 +1558,9 @@ const ChatInterface: React.FC = () => {
           
           // Single unified fallback response system to prevent duplicates
           setTimeout(() => {
-            // Check if we're in an active troubleshooting session first
-            if (activeWorkOrder && conversationContext.troubleshootingFlow) {
-              const contextualResponse = handleContextualFollowUp(userText, activeWorkOrder);
-              if (contextualResponse) {
-                addBotMessage(contextualResponse.text, contextualResponse.images, contextualResponse.videos, contextualResponse.instructions, contextualResponse.options);
-                setLoadingResponse(false);
-                return;
-              }
-            }
-            
             // Handle predefined option selections
             if (currentOptions.includes(userText)) {
               setCurrentOptions([]);
-              setShowIssueTypeButtons(false);
               handlePredefinedOptions(userText);
               setLoadingResponse(false);
               return;
@@ -2158,8 +2070,6 @@ Comments: ${wo.comments}`;
     setConversationHistory([]);
     
     setActiveWorkOrder(null);
-    setTroubleshootingStep(0);
-    setShowIssueTypeButtons(false);
     setCurrentOptions([]);
     addBotMessage(t('chat.flowReset'));
   };
@@ -3124,52 +3034,7 @@ Comments: ${wo.comments}`;
 
       {/* ======== DYNAMIC CONVERSATION UI COMPONENTS ======== */}
       
-      {/* Issue Type Selection Buttons */}
-      {showIssueTypeButtons && (
-        <Box sx={{ 
-          width: { xs: '90%', md: '600px' }, 
-          mb: 3,
-          background: 'rgba(255, 255, 255, 0.95)',
-          backdropFilter: 'blur(20px)',
-          border: '1px solid rgba(148, 163, 184, 0.2)',
-          borderRadius: '16px',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-          p: 3
-        }}>
-          <Typography variant="h6" gutterBottom sx={{ color: '#1e293b', fontWeight: 600 }}>
-            {t('chatInterface.selectIssueType')}
-          </Typography>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {currentOptions.map((option, index) => (
-              <Button
-                key={index}
-                onClick={() => handleOptionSelection(option)}
-                variant="outlined"
-                sx={{
-                  justifyContent: 'flex-start',
-                  textTransform: 'none',
-                  p: 2,
-                  borderRadius: '12px',
-                  background: 'rgba(248, 250, 252, 0.8)',
-                  border: '1px solid rgba(148, 163, 184, 0.3)',
-                  color: 'rgba(30, 41, 59, 0.9)',
-                  fontWeight: 500,
-                  fontSize: '1rem',
-                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                  '&:hover': {
-                    background: 'rgba(59, 130, 246, 0.1)',
-                    border: '1px solid rgba(59, 130, 246, 0.5)',
-                    transform: 'translateY(-2px)',
-                    boxShadow: '0 8px 25px rgba(59, 130, 246, 0.2)',
-                  }
-                }}
-              >
-                {option}
-              </Button>
-            ))}
-          </Box>
-        </Box>
-      )}
+      {/* AI handles all interactions - no manual dropdown selections needed */}
 
       {/* ======== END DYNAMIC CONVERSATION UI ======== */}
 
