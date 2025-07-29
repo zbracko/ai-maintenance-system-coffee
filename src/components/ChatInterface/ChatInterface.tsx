@@ -2596,6 +2596,10 @@ Comments: ${wo.comments}`;
                                       }}
                                       onClick={() => handleImageClick(img)}
                                       onError={(e) => {
+                                        // Enhanced debugging for image loading issues
+                                        console.error('Failed to load image:', img);
+                                        console.error('Error details:', e.currentTarget.src);
+                                        
                                         // Fallback to placeholder if image fails to load
                                         e.currentTarget.style.display = 'none';
                                         e.currentTarget.parentElement.innerHTML = `
@@ -2614,8 +2618,13 @@ Comments: ${wo.comments}`;
                                             <span style="font-size: 48px; color: #64748b; margin-bottom: 8px;">📸</span>
                                             <span style="font-size: 14px; color: #64748b; font-weight: 500;">Image not available</span>
                                             <span style="font-size: 12px; color: #64748b; margin-top: 4px;">${img}</span>
+                                            <span style="font-size: 10px; color: #ef4444; margin-top: 4px;">Check console for details</span>
                                           </div>
                                         `;
+                                      }}
+                                      onLoad={(e) => {
+                                        // Success logging for debugging
+                                        console.log('Successfully loaded image:', img);
                                       }}
                                     />
                                   ) : (
