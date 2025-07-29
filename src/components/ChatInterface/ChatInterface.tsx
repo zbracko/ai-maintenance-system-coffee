@@ -48,6 +48,9 @@ import MicIcon from '@mui/icons-material/Mic';
 import ListAltIcon from '@mui/icons-material/ListAlt';
 import HistoryIcon from '@mui/icons-material/History';
 import NoteAddIcon from '@mui/icons-material/NoteAdd';
+
+// Import our chat session utilities
+import { saveChatSession, ChatSession, ChatMessage } from '../../utils/chatSessionUtils';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import VideoCallIcon from '@mui/icons-material/VideoCall';
 import FeedbackIcon from '@mui/icons-material/Feedback';
@@ -408,6 +411,10 @@ const ChatInterface: React.FC = () => {
     sessionId: sessionId
   });
   const [conversationHistory, setConversationHistory] = useState<{ sender: 'user' | 'bot'; text: string; timestamp?: string }[]>([]);
+
+  // Chat session tracking for automatic maintenance log generation
+  const [sessionStartTime, setSessionStartTime] = useState<string>('');
+  const [currentChatSession, setCurrentChatSession] = useState<ChatSession | null>(null);
   
   const [currentOptions, setCurrentOptions] = useState<string[]>([]);
   const [instructions, setInstructions] = useState<Instruction[]>([]);
@@ -426,6 +433,85 @@ const ChatInterface: React.FC = () => {
     "What machines do you support?"
   ]);
   
+  // Initialize session tracking when component mounts
+  useEffect(() => {
+    if (sessionId && !sessionStartTime) {
+      const startTime = new Date().toISOString();
+      setSessionStartTime(startTime);
+      console.log('🎯 Chat session started:', sessionId, 'at', startTime);
+    }
+  }, [sessionId, sessionStartTime]);
+
+  // Function to create chat session object
+  const createChatSession = (): ChatSession => {
+    const chatMessages: ChatMessage[] = conversationHistory.map(msg => ({
+      sender: msg.sender,
+      text: msg.text,
+      timestamp: msg.timestamp || new Date().toISOString()
+    }));
+
+    // Analyze conversation for tags
+    const allText = conversationHistory.map(m => m.text.toLowerCase()).join(' ');
+    const tags: string[] = [];
+    
+    // Add relevant tags based on conversation content
+    if (allText.includes('taste') || allText.includes('bitter') || allText.includes('flavor')) tags.push('coffee_quality');
+    if (allText.includes('clean') || allText.includes('descale')) tags.push('cleaning');
+    if (allText.includes('repair') || allText.includes('fix') || allText.includes('broken')) tags.push('repair');
+    if (allText.includes('maintenance')) tags.push('maintenance');
+    if (allText.includes('grind') || allText.includes('grinder')) tags.push('grinder');
+    if (allText.includes('water') || allText.includes('filter')) tags.push('water_system');
+    if (allText.includes('steam') || allText.includes('milk')) tags.push('steam_system');
+
+    const currentUser = localStorage.getItem('currentUser') || 'Chat User';
+    const machineId = localStorage.getItem('currentMachineModel') || 'Coffee Machine #001';
+
+    return {
+      sessionId: sessionId,
+      startTime: sessionStartTime,
+      endTime: new Date().toISOString(),
+      userId: currentUser,
+      userName: currentUser,
+      machineId: machineId,
+      messages: chatMessages,
+      tags: tags,
+      workOrderGenerated: false,
+      problemResolved: allText.includes('thank') || allText.includes('solved') || allText.includes('fixed'),
+      duration: Math.round((new Date().getTime() - new Date(sessionStartTime).getTime()) / (1000 * 60)) + ' minutes'
+    };
+  };
+
+  // Function to save current session
+  const saveCurrentSession = () => {
+    if (conversationHistory.length >= 2 && sessionStartTime) { // At least one exchange
+      try {
+        const session = createChatSession();
+        saveChatSession(session);
+        setCurrentChatSession(session);
+        console.log('💾 Chat session saved:', session.sessionId, 'with', session.messages.length, 'messages');
+      } catch (error) {
+        console.error('❌ Error saving chat session:', error);
+      }
+    }
+  };
+
+  // Auto-save session when conversation grows
+  useEffect(() => {
+    if (conversationHistory.length > 0 && conversationHistory.length % 4 === 0) {
+      // Save every 4 messages (2 exchanges)
+      saveCurrentSession();
+    }
+  }, [conversationHistory.length]);
+
+  // Save session when component unmounts or session ends
+  useEffect(() => {
+    return () => {
+      if (conversationHistory.length > 0) {
+        saveCurrentSession();
+      }
+    };
+  }, []);
+
   // ======== CONVERSATION MEMORY ========
   const [conversationMemory, setConversationMemory] = useState<{
     lastMentionedMachine?: string;

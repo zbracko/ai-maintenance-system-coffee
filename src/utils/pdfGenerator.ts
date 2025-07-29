@@ -226,6 +226,44 @@ export const generateIndividualLogPDF = async (
   console.log('🔄 Starting PDF generation for log:', log.workOrder);
   
   try {
+    // Defensive programming - ensure all required properties exist and are strings
+    // Clean and prepare all text fields for PDF (remove emojis and special characters)
+    const cleanText = (text: string): string => {
+      return String(text || '')
+        .replace(/[\u{1F600}-\u{1F64F}]/gu, '') // Remove emoticons
+        .replace(/[\u{1F300}-\u{1F5FF}]/gu, '') // Remove misc symbols  
+        .replace(/[\u{1F680}-\u{1F6FF}]/gu, '') // Remove transport symbols
+        .replace(/[\u{2600}-\u{26FF}]/gu, '')   // Remove misc symbols
+        .replace(/[\u{2700}-\u{27BF}]/gu, '')   // Remove dingbats
+        .replace(/[^\x00-\x7F]/g, '')           // Remove non-ASCII characters
+        .replace(/\s+/g, ' ')                   // Normalize whitespace
+        .trim();
+    };
+
+    const safeLog = {
+      ...log,
+      workOrder: cleanText(log.workOrder || 'N/A'),
+      machine: cleanText(log.machine || 'Unknown Machine'),
+      technician: cleanText(log.technician || 'Unknown Technician'),
+      date: cleanText(log.date || new Date().toISOString().split('T')[0]),
+      time: cleanText(log.time || 'Unknown'),
+      type: cleanText(log.type || 'Unknown'),
+      priority: cleanText(log.priority || 'Medium'),
+      status: cleanText(log.status || 'Unknown'),
+      duration: cleanText(log.duration || 'Unknown'),
+      description: cleanText(log.description || 'No description available'),
+      notes: cleanText(log.notes || 'No notes available'),
+      partsUsed: Array.isArray(log.partsUsed) 
+        ? log.partsUsed.map(part => cleanText(String(part))) 
+        : []
+    };
+    
+    console.log('🛡️ Safe log data prepared:', {
+      workOrder: safeLog.workOrder,
+      partsUsed: safeLog.partsUsed.length,
+      description: safeLog.description.substring(0, 50) + '...'
+    });
+    
     const labels = getLabels(language);
     const doc = new jsPDF();
     
@@ -255,7 +293,7 @@ export const generateIndividualLogPDF = async (
     doc.text(labels.title, margin, 25);
     
     doc.setFontSize(12);
-    doc.text(`${log.workOrder} - ${log.machine}`, margin, 35);
+    doc.text(`${safeLog.workOrder} - ${safeLog.machine}`, margin, 35);
     
     // Reset text color
     doc.setTextColor(0, 0, 0);
@@ -277,58 +315,58 @@ export const generateIndividualLogPDF = async (
     doc.setFont('helvetica', 'bold');
     doc.text(`${labels.workOrder}:`, leftColumn, yPosition);
     doc.setFont('helvetica', 'normal');
-    doc.text(log.workOrder, leftColumn + 35, yPosition);
+    doc.text(safeLog.workOrder, leftColumn + 35, yPosition);
     
     doc.setFont('helvetica', 'bold');
     doc.text(`${labels.machine}:`, rightColumn, yPosition);
     doc.setFont('helvetica', 'normal');
-    doc.text(log.machine, rightColumn + 30, yPosition);
+    doc.text(safeLog.machine, rightColumn + 30, yPosition);
     yPosition += 8;
 
     doc.setFont('helvetica', 'bold');
     doc.text(`${labels.technician}:`, leftColumn, yPosition);
     doc.setFont('helvetica', 'normal');
-    doc.text(log.technician, leftColumn + 35, yPosition);
+    doc.text(safeLog.technician, leftColumn + 35, yPosition);
     
     doc.setFont('helvetica', 'bold');
     doc.text(`${labels.date}:`, rightColumn, yPosition);
     doc.setFont('helvetica', 'normal');
-    doc.text(`${log.date} ${log.time}`, rightColumn + 20, yPosition);
+    doc.text(`${safeLog.date} ${safeLog.time}`, rightColumn + 20, yPosition);
     yPosition += 8;
 
     doc.setFont('helvetica', 'bold');
     doc.text(`${labels.type}:`, leftColumn, yPosition);
     doc.setFont('helvetica', 'normal');
-    doc.text(log.type, leftColumn + 20, yPosition);
+    doc.text(safeLog.type, leftColumn + 20, yPosition);
     
     doc.setFont('helvetica', 'bold');
     doc.text(`${labels.priority}:`, rightColumn, yPosition);
     doc.setFont('helvetica', 'normal');
-    doc.text(log.priority, rightColumn + 25, yPosition);
+    doc.text(safeLog.priority, rightColumn + 25, yPosition);
     yPosition += 8;
 
     doc.setFont('helvetica', 'bold');
     doc.text(`${labels.status}:`, leftColumn, yPosition);
     doc.setFont('helvetica', 'normal');
-    doc.text(log.status, leftColumn + 25, yPosition);
+    doc.text(safeLog.status, leftColumn + 25, yPosition);
     
     doc.setFont('helvetica', 'bold');
     doc.text(`${labels.duration}:`, rightColumn, yPosition);
     doc.setFont('helvetica', 'normal');
-    doc.text(log.duration, rightColumn + 25, yPosition);
+    doc.text(safeLog.duration, rightColumn + 25, yPosition);
     yPosition += 15;
 
     // Description
     yPosition += addWrappedText(`${labels.description}:`, 12, true);
     yPosition += 3;
-    yPosition += addWrappedText(log.description, 10);
+    yPosition += addWrappedText(safeLog.description, 10);
     yPosition += 10;
 
     // Parts Used
-    if (log.partsUsed.length > 0) {
+    if (safeLog.partsUsed.length > 0) {
       yPosition += addWrappedText(`${labels.partsUsed}:`, 12, true);
       yPosition += 3;
-      log.partsUsed.forEach(part => {
+      safeLog.partsUsed.forEach(part => {
         yPosition += addWrappedText(`• ${part}`, 10);
         yPosition += 2;
       });
@@ -336,10 +374,10 @@ export const generateIndividualLogPDF = async (
     }
 
     // Notes
-    if (log.notes) {
+    if (safeLog.notes) {
       yPosition += addWrappedText(`${labels.notes}:`, 12, true);
       yPosition += 3;
-      yPosition += addWrappedText(log.notes, 10);
+      yPosition += addWrappedText(safeLog.notes, 10);
       yPosition += 15;
     }
 
@@ -362,7 +400,7 @@ export const generateIndividualLogPDF = async (
       yPosition += 10;
 
       try {
-        const aiContent = await generateAIContent(log, language);
+        const aiContent = await generateAIContent(safeLog, language);
         console.log('✅ AI content generated, adding to PDF...');
 
         // Summary
@@ -444,7 +482,7 @@ export const generateIndividualLogPDF = async (
     }
 
     // Save the PDF
-    const filename = `maintenance-log-${log.workOrder}-${log.date}.pdf`;
+    const filename = `maintenance-log-${safeLog.workOrder}-${safeLog.date}.pdf`;
     console.log('💾 Saving PDF:', filename);
     doc.save(filename);
     console.log('✅ PDF saved successfully!');

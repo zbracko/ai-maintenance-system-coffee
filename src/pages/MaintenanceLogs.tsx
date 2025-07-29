@@ -33,10 +33,18 @@ import BuildIcon from '@mui/icons-material/Build';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import { jsPDF } from 'jspdf';
 import { useTranslation } from 'react-i18next';
 import { demoConfig } from '../config/demoConfig';
 import { generateIndividualLogPDF } from '../utils/pdfGenerator';
+import { 
+  getChatSessions, 
+  getLastChatSession, 
+  convertSessionToMaintenanceLog,
+  shouldAutoGenerateMaintenanceLog,
+  saveChatSession 
+} from '../utils/chatSessionUtils';
 
 // Demo maintenance logs data
 const demoMaintenanceLogs = [
@@ -119,7 +127,7 @@ const demoMaintenanceLogs = [
     partsUsed: [],
     notes: 'Hopper clean and functioning properly. No issues detected.',
     severity: 'low'
-  }
+  },
 ];
 
 interface Log {
@@ -141,21 +149,71 @@ interface Log {
 
 const MaintenanceLogs: React.FC = () => {
   const { t, i18n } = useTranslation();
-  // Initialize logs from localStorage or demo data
+  
+  // Initialize logs from localStorage or demo data + chat sessions
   const initializeLogs = (): Log[] => {
+    console.log('🔄 Initializing logs...');
     const savedLogs = localStorage.getItem('maintenanceLogs');
+    let baseLogs = demoMaintenanceLogs;
+    
     if (savedLogs) {
       try {
-        return JSON.parse(savedLogs);
+        const parsed = JSON.parse(savedLogs);
+        // If saved logs exist and have more than demo logs, use them
+        if (parsed.length >= demoMaintenanceLogs.length) {
+          baseLogs = parsed;
+        }
       } catch (error) {
         console.error('Error parsing saved logs:', error);
-        return demoMaintenanceLogs;
       }
     }
-    return demoMaintenanceLogs;
+    
+    // Check for actual chat sessions and convert them to maintenance logs
+    const chatSessions = getChatSessions();
+    console.log('📋 Found chat sessions:', chatSessions.length, chatSessions);
+    
+    // Only use the LATEST qualifying chat session to avoid duplicates
+    let latestChatLog: Log | null = null;
+    
+    if (chatSessions.length > 0) {
+      // Sort sessions by start time, newest first
+      const sortedSessions = [...chatSessions].sort((a, b) => 
+        new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
+      );
+      
+      // Find the first (most recent) session that qualifies for a maintenance log
+      for (const session of sortedSessions) {
+        console.log(`🔍 Checking latest session:`, session);
+        const shouldGenerate = shouldAutoGenerateMaintenanceLog(session);
+        console.log(`✅ Should generate log: ${shouldGenerate}`);
+        
+        if (shouldGenerate) {
+          const logId = baseLogs.length + 1; // Always use next available ID
+          latestChatLog = convertSessionToMaintenanceLog(session, logId);
+          console.log('🆕 Generated maintenance log from latest session:', latestChatLog);
+          break; // Only take the most recent qualifying session
+        }
+      }
+    }
+    
+    console.log('📊 Chat log generated:', latestChatLog ? 1 : 0);
+    
+    // Combine demo logs with the single latest chat session log
+    const allLogs = latestChatLog ? [latestChatLog, ...baseLogs] : baseLogs;
+    
+    // Sort by date/time, newest first
+    allLogs.sort((a, b) => {
+      const dateA = new Date(a.date + ' ' + a.time);
+      const dateB = new Date(b.date + ' ' + b.time);
+      return dateB.getTime() - dateA.getTime();
+    });
+    
+    console.log('📈 Final logs count:', allLogs.length);
+    return allLogs;
   };
 
   const [logs, setLogs] = useState<Log[]>(initializeLogs);
+  const [availableChatSessions, setAvailableChatSessions] = useState(getChatSessions());
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -172,10 +230,96 @@ const MaintenanceLogs: React.FC = () => {
     workOrder: ''
   });
 
-  // Save logs to localStorage whenever logs change
+  // Save logs to localStorage whenever logs change (but exclude chat-generated logs)
   useEffect(() => {
-    localStorage.setItem('maintenanceLogs', JSON.stringify(logs));
+    // Only save user-created logs to localStorage, not chat-generated ones
+    const userCreatedLogs = logs.filter(log => log.type !== 'AI Chat Session');
+    localStorage.setItem('maintenanceLogs', JSON.stringify(userCreatedLogs));
   }, [logs]);
+
+  // Function to refresh logs and check for new chat sessions
+  const refreshLogsFromChatSessions = () => {
+    console.log('🔄 Refreshing logs from chat sessions...');
+    const newLogs = initializeLogs();
+    setLogs(newLogs);
+    setAvailableChatSessions(getChatSessions());
+    console.log('✅ Logs refreshed. Found', getChatSessions().length, 'chat sessions');
+  };
+
+  // Function to create a sample chat session for testing
+  const createSampleChatSession = () => {
+    // Clear old sessions first to prevent accumulation
+    localStorage.removeItem('chatSessions');
+    
+    const sampleSession = {
+      sessionId: `chat_${Date.now()}`,
+      startTime: new Date(Date.now() - 15 * 60 * 1000).toISOString(), // 15 minutes ago
+      endTime: new Date().toISOString(),
+      userId: 'user_lisa',
+      userName: 'Lisa Rodriguez',
+      machineId: 'Coffee Machine #002',
+      messages: [
+        {
+          sender: 'user' as const,
+          text: 'Hi, the coffee tastes really bitter today and has an off flavor',
+          timestamp: new Date(Date.now() - 15 * 60 * 1000).toISOString()
+        },
+        {
+          sender: 'bot' as const,
+          text: 'I can help you troubleshoot this coffee quality issue. Bitter and off flavors usually indicate maintenance needs. When did you last descale the machine?',
+          timestamp: new Date(Date.now() - 14 * 60 * 1000).toISOString()
+        },
+        {
+          sender: 'user' as const,
+          text: 'Not sure, maybe 2 months ago? Also the water filter might be old',
+          timestamp: new Date(Date.now() - 13 * 60 * 1000).toISOString()
+        },
+        {
+          sender: 'bot' as const,
+          text: 'That explains the issue! You need to replace the water filter and perform descaling. Let me walk you through the process step by step.',
+          timestamp: new Date(Date.now() - 12 * 60 * 1000).toISOString()
+        },
+        {
+          sender: 'user' as const,
+          text: 'Yes please, I need help with descaling',
+          timestamp: new Date(Date.now() - 11 * 60 * 1000).toISOString()
+        },
+        {
+          sender: 'bot' as const,
+          text: 'Perfect! First, remove the old water filter and empty the reservoir completely. Then mix descaling solution 1:10 with water.',
+          timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString()
+        },
+        {
+          sender: 'user' as const,
+          text: 'Done! The coffee tastes much better now. Thank you!',
+          timestamp: new Date().toISOString()
+        }
+      ],
+      tags: ['coffee_quality', 'descaling', 'water_filter', 'maintenance'],
+      workOrderGenerated: true,
+      workOrderId: 'WO-CM-127',
+      partsUsed: ['Water Filter CM-WF-002', 'Descaling Solution CM-DS-019'],
+      problemResolved: true,
+      duration: '15 minutes'
+    };
+
+    saveChatSession(sampleSession);
+    console.log('🆕 Sample chat session created:', sampleSession);
+    refreshLogsFromChatSessions();
+  };
+
+  // Auto-refresh logs every 30 seconds to check for new chat sessions
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const currentSessions = getChatSessions();
+      if (currentSessions.length !== availableChatSessions.length) {
+        console.log('🆕 New chat session detected, refreshing logs...');
+        refreshLogsFromChatSessions();
+      }
+    }, 30000); // Check every 30 seconds
+
+    return () => clearInterval(interval);
+  }, [availableChatSessions.length]);
 
   // Filter logs based on search and filters
   const filteredLogs = logs.filter(log => {
@@ -329,6 +473,11 @@ const MaintenanceLogs: React.FC = () => {
             📋 Maintenance Logs
           </Typography>
           <Box sx={{ display: 'flex', gap: 1 }}>
+            <Tooltip title="Refresh from Chat Sessions">
+              <IconButton onClick={refreshLogsFromChatSessions} color="primary">
+                <RefreshIcon />
+              </IconButton>
+            </Tooltip>
             <Tooltip title="Download PDF Report">
               <IconButton onClick={generatePDFReport} color="primary">
                 <DownloadIcon />
@@ -347,7 +496,29 @@ const MaintenanceLogs: React.FC = () => {
 
         {demoConfig.isDemo && (
           <Alert severity="info" sx={{ mb: 2 }}>
-            🎪 <strong>Demo Mode:</strong> This page shows sample maintenance logs with filtering, search, and PDF export capabilities. In production, data would be synced with your maintenance management system.
+            🎪 <strong>Demo Mode:</strong> This page shows maintenance logs with filtering, search, and PDF export. 
+            Logs are automatically generated from actual chat sessions when you use the AI Chat interface! 
+            Available chat sessions: {availableChatSessions.length}
+          </Alert>
+        )}
+
+        {availableChatSessions.length > 0 && (
+          <Alert severity="success" sx={{ mb: 2 }}>
+            🤖 <strong>Live Chat Integration:</strong> Found {availableChatSessions.length} chat session(s). 
+            Maintenance logs are automatically created from qualifying chat conversations. 
+            <Button size="small" onClick={refreshLogsFromChatSessions} sx={{ ml: 1 }}>
+              Refresh Now
+            </Button>
+          </Alert>
+        )}
+
+        {/* Debug/Testing Section */}
+        {demoConfig.isDemo && (
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            🧪 <strong>Testing:</strong> Create a sample chat session to test the auto-generation feature.
+            <Button size="small" onClick={createSampleChatSession} sx={{ ml: 1 }} variant="outlined">
+              Create Sample Chat Session
+            </Button>
           </Alert>
         )}
 
@@ -426,7 +597,7 @@ const MaintenanceLogs: React.FC = () => {
             >
               <CardContent>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                  <Typography variant="h6" component="h3" sx={{ fontWeight: 'bold', fontSize: '1.1rem' }}>
+                  <Typography variant="h6" component="h3" sx={{ fontWeight: 'bold', fontSize: '1.1rem', color: '#1f2937' }}>
                     {log.workOrder}
                   </Typography>
                   <Chip 
