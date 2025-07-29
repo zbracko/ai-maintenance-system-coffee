@@ -7,13 +7,17 @@
 
 import { demoWorkOrders, demoPastLogs, demoMachineOptions } from '../data/demoData';
 import { demoConfig } from '../config/demoConfig';
+import { configService } from '../services/configService';
 
-// OpenAI Configuration with fallback for Amplify deployment
+// OpenAI Configuration with runtime environment variable fetching
 const getOpenAIKey = (): string => {
   // Try Vite environment variable first (build-time)
   if (import.meta.env.VITE_OPENAI_API_KEY) {
     return import.meta.env.VITE_OPENAI_API_KEY;
   }
+  
+  // For Amplify: Try to fetch from a runtime configuration endpoint
+  // This is a fallback that can be implemented if build-time injection fails
   
   // Fallback: Try to get from window.ENV_CONFIG (runtime - Amplify injection)
   if (typeof window !== 'undefined' && (window as any).ENV_CONFIG?.VITE_OPENAI_API_KEY) {
@@ -30,27 +34,42 @@ const getOpenAIKey = (): string => {
     return (window as any).REACT_APP_OPENAI_API_KEY;
   }
   
+  // Final fallback: Return a placeholder that indicates we should use demo mode
   return '';
 };
 
+// For development/testing - you can temporarily hardcode this for testing
+// const TEMP_API_KEY = 'your-api-key-here'; // Remove this in production
 const OPENAI_API_KEY = getOpenAIKey();
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 
 // Debug logging for environment variables
-console.log('🌍 Environment Variables Debug (Vite + Amplify):');
+console.log('🌍 Environment Variables Debug (Comprehensive):');
 console.log(`   - NODE_ENV: ${import.meta.env.MODE}`);
-console.log(`   - All VITE_ vars:`, Object.keys(import.meta.env).filter(key => key.startsWith('VITE_')));
-console.log(`   - import.meta.env.VITE_OPENAI_API_KEY exists: ${!!import.meta.env.VITE_OPENAI_API_KEY}`);
-console.log(`   - window.ENV_CONFIG exists: ${typeof window !== 'undefined' && !!(window as any).ENV_CONFIG}`);
-console.log(`   - window.ENV_CONFIG.VITE_OPENAI_API_KEY exists: ${typeof window !== 'undefined' && !!(window as any).ENV_CONFIG?.VITE_OPENAI_API_KEY}`);
-console.log(`   - window.VITE_OPENAI_API_KEY exists: ${typeof window !== 'undefined' && !!(window as any).VITE_OPENAI_API_KEY}`);
-console.log(`   - window.REACT_APP_OPENAI_API_KEY exists: ${typeof window !== 'undefined' && !!(window as any).REACT_APP_OPENAI_API_KEY}`);
-console.log(`   - Final API key source: ${OPENAI_API_KEY ? 'Found' : 'Not found'}`);
+console.log(`   - Build-time VITE vars:`, Object.keys(import.meta.env).filter(key => key.startsWith('VITE_')));
+console.log(`   - import.meta.env.VITE_OPENAI_API_KEY: ${!!import.meta.env.VITE_OPENAI_API_KEY}`);
+
+if (typeof window !== 'undefined') {
+  console.log(`   - window.ENV_CONFIG exists: ${!!(window as any).ENV_CONFIG}`);
+  console.log(`   - window.ENV_CONFIG content:`, (window as any).ENV_CONFIG);
+  console.log(`   - window.VITE_OPENAI_API_KEY: ${!!(window as any).VITE_OPENAI_API_KEY}`);
+  console.log(`   - window.REACT_APP_OPENAI_API_KEY: ${!!(window as any).REACT_APP_OPENAI_API_KEY}`);
+  
+  // Check all window properties that might contain our API key
+  const windowKeys = Object.keys(window).filter(key => 
+    key.includes('OPENAI') || key.includes('VITE_') || key.includes('REACT_APP_')
+  );
+  console.log(`   - All window keys with OPENAI/VITE_/REACT_APP_:`, windowKeys);
+}
+
+console.log(`   - Final API key source: ${OPENAI_API_KEY ? 'Found (' + OPENAI_API_KEY.length + ' chars)' : 'Not found'}`);
 
 // Debug logging for OpenAI usage
-console.log(`🔑 OpenAI API Key configured: ${OPENAI_API_KEY ? 'Yes' : 'No'} (Length: ${OPENAI_API_KEY?.length || 0})`);
-console.log(`🔑 API Key first 10 chars: ${OPENAI_API_KEY?.substring(0, 10) || 'undefined'}`);
-console.log(`🔑 API Key last 4 chars: ${OPENAI_API_KEY?.substring(OPENAI_API_KEY.length - 4) || 'undefined'}`);
+console.log(`🔑 OpenAI API Key Status:`);
+console.log(`   - Configured: ${OPENAI_API_KEY ? 'Yes' : 'No'}`);
+console.log(`   - Length: ${OPENAI_API_KEY?.length || 0}`);
+console.log(`   - First 10 chars: ${OPENAI_API_KEY?.substring(0, 10) || 'undefined'}`);
+console.log(`   - Last 4 chars: ${OPENAI_API_KEY?.substring(OPENAI_API_KEY.length - 4) || 'undefined'}`);
 console.log(`🌐 OpenAI API URL: ${OPENAI_API_URL}`);
 
 export interface Message {
@@ -210,13 +229,27 @@ export const getOpenAIResponse = async (
   conversationHistory: Message[],
   context: ConversationContext
 ): Promise<ContextualResponse> => {
+  // Get API key with runtime fallback
+  let apiKey = OPENAI_API_KEY;
+  
+  // If no API key found during initial load, try runtime config service
+  if (!apiKey) {
+    console.log('🔄 No API key found at startup, checking runtime configuration...');
+    try {
+      apiKey = await configService.getOpenAIApiKey();
+      console.log(`🔑 Runtime API key: ${apiKey ? 'Found (' + apiKey.length + ' chars)' : 'Not found'}`);
+    } catch (error) {
+      console.warn('⚠️ Failed to fetch runtime configuration:', error);
+    }
+  }
+  
   // Try OpenAI first - only fall back to demo if explicitly disabled or if there's an error
-  const shouldUseOpenAI = OPENAI_API_KEY && OPENAI_API_KEY !== 'your-openai-api-key-here' && OPENAI_API_KEY.length > 10;
+  const shouldUseOpenAI = apiKey && apiKey !== 'your-openai-api-key-here' && apiKey.length > 10;
   
   console.log('🔍 OpenAI Validation Details:');
-  console.log(`   - API Key exists: ${!!OPENAI_API_KEY}`);
-  console.log(`   - API Key not placeholder: ${OPENAI_API_KEY !== 'your-openai-api-key-here'}`);
-  console.log(`   - API Key length > 10: ${OPENAI_API_KEY?.length > 10} (actual length: ${OPENAI_API_KEY?.length || 0})`);
+  console.log(`   - API Key exists: ${!!apiKey}`);
+  console.log(`   - API Key not placeholder: ${apiKey !== 'your-openai-api-key-here'}`);
+  console.log(`   - API Key length > 10: ${apiKey?.length > 10} (actual length: ${apiKey?.length || 0})`);
   console.log(`   - Should use OpenAI: ${shouldUseOpenAI}`);
   
   if (shouldUseOpenAI) {
@@ -228,7 +261,7 @@ export const getOpenAIResponse = async (
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENAI_API_KEY}`
+          'Authorization': `Bearer ${apiKey}`
         },
         body: JSON.stringify({
           model: 'gpt-4',
