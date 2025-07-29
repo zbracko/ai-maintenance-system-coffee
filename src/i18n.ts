@@ -251,7 +251,38 @@ const resources = {
         scheduleVideoMeeting: "Schedule a video meeting",
         sendFeedback: "Send feedback",
         proceedToPartsReplaced: "Proceed to Parts Replacement",
-        flowReset: "Flow reset. Starting over."
+        flowReset: "Flow reset. Starting over.",
+        
+        // Additional missing keys
+        reading: "Reading...",
+        demoScenarios: {
+          machineWontStart: "Machine 001 won't start",
+          coffeeTastesTerrible: "Coffee tastes terrible", 
+          strangeGrindingNoise: "Strange grinding noise",
+          steamWandNotWorking: "Steam wand not working",
+          needCreateWorkOrder: "Need to create work order",
+          showMaintenanceHistory: "Show maintenance history",
+          whatMachinesSupported: "What machines do you support?"
+        },
+        loadingMessages: {
+          crossReferencing: "Cross-referencing manual schematics with log data...",
+          synthesizing: "Synthesizing procedural notes against diagnostic outputs...",
+          analyzing: "Analyzing maintenance patterns and historical data...",
+          processing: "Processing equipment specifications..."
+        },
+        // PDF report keys
+        pdfReportTitle: "Maintenance Report",
+        workOrder: "Work Order",
+        task: "Task", 
+        machineNumber: "Machine Number",
+        safetyChecks: "Safety Checks",
+        partsReplaced: "Parts Replaced",
+        finalNotes: "Final Notes",
+        pdfDownloaded: "Report downloaded successfully",
+        workflowCompletedNoDownload: "Workflow completed successfully",
+        // More missing keys found in ChatInterface
+        typoTestExample: '⚡ Typo Test: "machien broke"',
+        quickDemoActions: "🎪 **Quick Demo Actions** - Click any button below for instant demonstration:"
       }
     }
   },
@@ -1219,7 +1250,58 @@ const resources = {
         scheduleVideoMeeting: "Ronga musangano wevhidhiyo",
         sendFeedback: "Tumira mhinduro",
         proceedToPartsReplaced: "Enderera mberi nekutsiviwa kwezvikamu",
-        flowReset: "Flow yatangazve."
+        flowReset: "Flow yatangazve.",
+        adminPanel: {
+          tabs: {
+            technicians: "☕ Technicians",
+            resources: "📚 Resources", 
+            coffeeMachines: "⚙️ Coffee Machines",
+            qrCodes: "🔗 QR Codes",
+            locations: "📍 Locations"
+          },
+          buttons: {
+            rename: "Rename",
+            move: "Move",
+            addNote: "Add Note",
+            addAttachment: "Add Attachment",
+            saveFile: "Save File",
+            viewEditChunks: "View & Edit Chunks",
+            cancel: "Cancel",
+            upload: "Upload"
+          },
+          labels: {
+            noteContent: "Note Content",
+            type: "Type",
+            importance: "Importance",
+            contentUrl: "Content/URL",
+            newName: "New Name",
+            targetFolder: "Target Folder",
+            primaryTechnician: "Primary Technician",
+            mainTechnician: "Main Technician",
+            machineModel: "Machine Model",
+            machineNumber: "Machine Number",
+            location: "Location",
+            state: "State",
+            areaCity: "Area/City",
+            enterCity: "Enter City"
+          },
+          status: {
+            verified: "Verified",
+            unverified: "Unverified"
+          },
+          messages: {
+            uploading: "Uploading...",
+            processing: "Processing...",
+            fileUploaded: "File uploaded",
+            uploadingPartsFile: "Uploading parts file...",
+            partsFileUploaded: "Parts file uploaded",
+            cantRenameNoKey: "Can't rename: no oldKey found.",
+            resourceRenamed: "Resource renamed successfully.",
+            cantMoveNoKey: "Can't move: no oldKey found.",
+            selectTargetFolder: "Please select a target folder first.",
+            resourceMoved: "Resource moved successfully."
+          }
+        }
       }
     }
   }, 
@@ -1462,7 +1544,89 @@ const resources = {
         scheduleVideoMeeting: "Programar reunión por video",
         sendFeedback: "Enviar comentarios",
         proceedToPartsReplaced: "Proceder al reemplazo de partes",
-        flowReset: "Flujo reiniciado. Comenzando de nuevo."
+        flowReset: "Flujo reiniciado. Comenzando de nuevo.",
+        
+        // Additional missing keys  
+        reading: "Leyendo...",
+        demoScenarios: {
+          machineWontStart: "La máquina 001 no arranca",
+          coffeeTastesTerrible: "El café sabe terrible",
+          strangeGrindingNoise: "Ruido extraño de molienda", 
+          steamWandNotWorking: "La varilla de vapor no funciona",
+          needCreateWorkOrder: "Necesito crear orden de trabajo",
+          showMaintenanceHistory: "Mostrar historial de mantenimiento",
+          whatMachinesSupported: "¿Qué máquinas soportan?"
+        },
+        loadingMessages: {
+          crossReferencing: "Verificando esquemas del manual con datos de registro...",
+          synthesizing: "Sintetizando notas procedimentales con resultados diagnósticos...",
+          analyzing: "Analizando patrones de mantenimiento y datos históricos...",
+          processing: "Procesando especificaciones del equipo..."
+        },
+        // PDF report keys
+        pdfReportTitle: "Informe de Mantenimiento",
+        workOrder: "Orden de Trabajo",
+        task: "Tarea",
+        machineNumber: "Número de Máquina", 
+        safetyChecks: "Verificaciones de Seguridad",
+        partsReplaced: "Partes Reemplazadas",
+        finalNotes: "Notas Finales",
+        pdfDownloaded: "Informe descargado exitosamente",
+        workflowCompletedNoDownload: "Flujo de trabajo completado exitosamente",
+        // More missing keys found in ChatInterface
+        typoTestExample: '⚡ Prueba de errores: "maquina rota"',
+        quickDemoActions: "🎪 **Acciones de Demo Rápido** - Haga clic en cualquier botón para demostración instantánea:",
+        adminPanel: {
+          tabs: {
+            technicians: "☕ Técnicos",
+            resources: "📚 Recursos", 
+            coffeeMachines: "⚙️ Máquinas de Café",
+            qrCodes: "🔗 Códigos QR",
+            locations: "📍 Ubicaciones"
+          },
+          buttons: {
+            rename: "Renombrar",
+            move: "Mover",
+            addNote: "Agregar Nota",
+            addAttachment: "Agregar Adjunto",
+            saveFile: "Guardar Archivo",
+            viewEditChunks: "Ver y Editar Fragmentos",
+            cancel: "Cancelar",
+            upload: "Subir"
+          },
+          labels: {
+            noteContent: "Contenido de Nota",
+            type: "Tipo",
+            importance: "Importancia",
+            contentUrl: "Contenido/URL",
+            newName: "Nuevo Nombre",
+            targetFolder: "Carpeta Objetivo",
+            primaryTechnician: "Técnico Principal",
+            mainTechnician: "Técnico Principal",
+            machineModel: "Modelo de Máquina",
+            machineNumber: "Número de Máquina",
+            location: "Ubicación",
+            state: "Estado",
+            areaCity: "Área/Ciudad",
+            enterCity: "Ingrese Ciudad"
+          },
+          status: {
+            verified: "Verificado",
+            unverified: "No verificado"
+          },
+          messages: {
+            uploading: "Subiendo...",
+            processing: "Procesando...",
+            fileUploaded: "Archivo subido",
+            uploadingPartsFile: "Subiendo archivo de partes...",
+            partsFileUploaded: "Archivo de partes subido",
+            cantRenameNoKey: "No se puede renombrar: no se encontró oldKey.",
+            resourceRenamed: "Recurso renombrado exitosamente.",
+            cantMoveNoKey: "No se puede mover: no se encontró oldKey.",
+            selectTargetFolder: "Por favor seleccione una carpeta objetivo primero.",
+            resourceMoved: "Recurso movido exitosamente."
+          }
+        }
       }
     }
   },
@@ -1704,7 +1868,99 @@ const resources = {
         scheduleVideoMeeting: "Planifier une réunion vidéo",
         sendFeedback: "Envoyer des commentaires",
         proceedToPartsReplaced: "Passer au remplacement des pièces",
-        flowReset: "Processus réinitialisé. Recommencer."
+        flowReset: "Processus réinitialisé. Recommencer.",
+        demoScenarios: {
+          grinder: "Problème de broyeur",
+          pressure: "Problème de pression",
+          temperature: "Problème de température"
+        },
+        loadingMessages: {
+          thinking: "Réflexion...",
+          analyzing: "Analyse...",
+          searching: "Recherche dans la base de connaissances...",
+          generating: "Génération de la réponse..."
+        },
+        pdfGeneration: {
+          generatingReport: "Génération du rapport...",
+          downloadReady: "Téléchargement prêt",
+          reportTitle: "Rapport de maintenance",
+          reportGenerated: "Rapport généré avec succès",
+          downloadError: "Erreur lors du téléchargement"
+        },
+        commands: {
+          scan: "scanner",
+          help: "aide",
+          manual: "manuel",
+          reset: "réinitialiser"
+        },
+        chatInterface: {
+          placeholder: "Tapez votre message ici ou utilisez les commandes vocales...",
+          voiceButton: "Commande vocale",
+          sendButton: "Envoyer",
+          scanButton: "Scanner QR",
+          helpButton: "Aide",
+          resetButton: "Réinitialiser",
+          demoMode: "Mode démo",
+          demoModeActive: "Mode démo actif",
+          exitDemo: "Quitter le mode démo",
+          listening: "Écoute...",
+          processing: "Traitement...",
+          speechNotSupported: "Reconnaissance vocale non prise en charge",
+          microphoneError: "Erreur d'accès au microphone",
+          noSpeechDetected: "Aucune parole détectée",
+          speechError: "Erreur de reconnaissance vocale"
+        },
+        adminPanel: {
+          tabs: {
+            technicians: "☕ Techniciens",
+            resources: "📚 Ressources", 
+            coffeeMachines: "⚙️ Machines à Café",
+            qrCodes: "🔗 Codes QR",
+            locations: "📍 Emplacements"
+          },
+          buttons: {
+            rename: "Renommer",
+            move: "Déplacer",
+            addNote: "Ajouter une Note",
+            addAttachment: "Ajouter une Pièce Jointe",
+            saveFile: "Enregistrer le Fichier",
+            viewEditChunks: "Voir et Modifier les Fragments",
+            cancel: "Annuler",
+            upload: "Télécharger"
+          },
+          labels: {
+            noteContent: "Contenu de la Note",
+            type: "Type",
+            importance: "Importance",
+            contentUrl: "Contenu/URL",
+            newName: "Nouveau Nom",
+            targetFolder: "Dossier Cible",
+            primaryTechnician: "Technicien Principal",
+            mainTechnician: "Technicien Principal",
+            machineModel: "Modèle de Machine",
+            machineNumber: "Numéro de Machine",
+            location: "Emplacement",
+            state: "État",
+            areaCity: "Zone/Ville",
+            enterCity: "Entrez la Ville"
+          },
+          status: {
+            verified: "Vérifié",
+            unverified: "Non vérifié"
+          },
+          messages: {
+            uploading: "Téléchargement...",
+            processing: "Traitement...",
+            fileUploaded: "Fichier téléchargé",
+            uploadingPartsFile: "Téléchargement du fichier de pièces...",
+            partsFileUploaded: "Fichier de pièces téléchargé",
+            cantRenameNoKey: "Impossible de renommer : aucune oldKey trouvée.",
+            resourceRenamed: "Ressource renommée avec succès.",
+            cantMoveNoKey: "Impossible de déplacer : aucune oldKey trouvée.",
+            selectTargetFolder: "Veuillez d'abord sélectionner un dossier cible.",
+            resourceMoved: "Ressource déplacée avec succès."
+          }
+        }
       }
     }
   },

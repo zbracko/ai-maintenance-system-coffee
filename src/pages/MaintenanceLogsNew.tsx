@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -135,7 +135,21 @@ interface Log {
 
 const MaintenanceLogs: React.FC = () => {
   const { t } = useTranslation();
-  const [logs, setLogs] = useState<Log[]>(demoMaintenanceLogs);
+  // Initialize logs from localStorage or demo data
+  const initializeLogs = (): Log[] => {
+    const savedLogs = localStorage.getItem('maintenanceLogsNew');
+    if (savedLogs) {
+      try {
+        return JSON.parse(savedLogs);
+      } catch (error) {
+        console.error('Error parsing saved logs:', error);
+        return demoMaintenanceLogs;
+      }
+    }
+    return demoMaintenanceLogs;
+  };
+
+  const [logs, setLogs] = useState<Log[]>(initializeLogs);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -149,6 +163,11 @@ const MaintenanceLogs: React.FC = () => {
     technician: '',
     workOrder: ''
   });
+
+  // Save logs to localStorage whenever logs change
+  useEffect(() => {
+    localStorage.setItem('maintenanceLogsNew', JSON.stringify(logs));
+  }, [logs]);
 
   // Filter logs based on search and filters
   const filteredLogs = logs.filter(log => {

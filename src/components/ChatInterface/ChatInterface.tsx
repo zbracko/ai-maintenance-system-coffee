@@ -1389,24 +1389,18 @@ const ChatInterface: React.FC = () => {
       setChatFlow(newFlow);
 
       if (newFlow === 'showingWorkOrders') {
-        try {
-          const response = await fetch(`${REACT_APP_API_BASE_URL}/api/workorders`);
-          const data = await response.json();
-          const fetchedOrders = data.workOrders || [];
-          setWorkOrders(fetchedOrders);
-          if (fetchedOrders.length > 0) {
-            addBotMessage(t('chat.workOrdersPrompt'));
-            fetchedOrders.forEach((wo: WorkOrder, i: number) => {
-              addBotMessage(`${i + 1}) ${wo.id} - ${wo.task}`);
-            });
-          } else {
-            addBotMessage(t('chat.noWorkOrders'));
-          }
-          addBotMessage(t('chat.scanQrOption'));
-        } catch (error) {
-          console.error('Error fetching work orders:', error);
-          addBotMessage(t('chat.errorFetchingWorkOrders'));
+        // Always use demo data for consistency
+        const fetchedOrders = mockWorkOrders;
+        setWorkOrders(fetchedOrders);
+        if (fetchedOrders.length > 0) {
+          addBotMessage(t('chat.workOrdersPrompt'));
+          fetchedOrders.forEach((wo: WorkOrder, i: number) => {
+            addBotMessage(`${i + 1}) ${wo.id} - ${wo.task}`);
+          });
+        } else {
+          addBotMessage(t('chat.noWorkOrders'));
         }
+        addBotMessage(t('chat.scanQrOption'));
       } else if (newFlow === 'creatingWorkOrder') {
         setCreateWOopen(true);
       } else if (newFlow === 'showMaintenanceManual') {
@@ -3439,7 +3433,6 @@ Comments: ${wo.comments}`;
           <Slider {...mobileButtonSliderSettings}>
             {[
               { icon: ListAltIcon, text: 'See my work orders', color: '#10b981', action: () => { setInput('see my work orders'); handleSend(); } },
-              { icon: HistoryIcon, text: 'Find past maintenance logs', color: '#f59e0b', action: () => alert('Find past maintenance logs placeholder') },
               { icon: NoteAddIcon, text: 'Create a new work order', color: '#6366f1', action: () => { setInput('create a new work order'); handleSend(); } },
               { icon: ListAltIcon, text: 'View Maintenance Manual', color: '#8b5cf6', action: () => { setInput('view maintenance manual'); handleSend(); } }
             ].map((button, index) => (
@@ -3505,7 +3498,6 @@ Comments: ${wo.comments}`;
         >
           {[
             { icon: ListAltIcon, text: 'See my work orders', color: '#10b981', action: () => { setInput('see my work orders'); handleSend(); } },
-            { icon: HistoryIcon, text: 'Find past maintenance logs', color: '#f59e0b', action: () => alert('Find past maintenance logs placeholder') },
             { icon: NoteAddIcon, text: 'Create a new work order', color: '#6366f1', action: () => { setInput('create a new work order'); handleSend(); } },
             { icon: ListAltIcon, text: 'View Maintenance Manual', color: '#8b5cf6', action: () => { setInput('view maintenance manual'); handleSend(); } }
           ].map((button, index) => (
