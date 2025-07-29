@@ -129,7 +129,9 @@ export const demoWorkOrders = [
     partsUsed: 'TBD - Pending diagnosis',
     materials: 'Multimeter, test equipment',
     comments: 'Created via chat interaction - user reported complete power failure',
-    additionalNotes: 'User guided through initial diagnostics via AI assistant'
+    additionalNotes: 'User guided through initial diagnostics via AI assistant',
+    machineId: 'CM-001',
+    relatedLogId: 'LOG-001'
   },
   {
     id: 'WO-CM-126',
@@ -153,7 +155,9 @@ export const demoWorkOrders = [
     partsUsed: 'TBD - Pending inspection',
     materials: 'Steam wand tools, pressure gauge',
     comments: 'Created via chat interaction - safety concern with steam pressure',
-    additionalNotes: 'User provided immediate safety shutdown guidance'
+    additionalNotes: 'User provided immediate safety shutdown guidance',
+    machineId: 'CM-003',
+    relatedLogId: 'LOG-003'
   },
   {
     id: 'WO-CM-125',
@@ -177,7 +181,9 @@ export const demoWorkOrders = [
     partsUsed: 'Preventive maintenance kit',
     materials: 'Cleaning supplies, calibration tools',
     comments: 'Created via chat interaction - proactive maintenance scheduling',
-    additionalNotes: 'User requested preventive maintenance to avoid future issues'
+    additionalNotes: 'User requested preventive maintenance to avoid future issues',
+    machineId: 'CM-005',
+    relatedLogId: 'LOG-005'
   },
   {
     id: 'WO-CM-001',
@@ -298,39 +304,125 @@ export const demoWorkOrders = [
 
 export const demoPastLogs = [
   {
+    id: 'LOG-001',
     date: '2025-07-28',
     summary: 'Chat Bot Response: Created work order WO-CM-127 for "Machine won\'t start" issue on Machine #001. User guided through power diagnostics.',
     technician: 'AI Assistant',
     duration: '8 minutes',
-    issues: 'Power connection loose, resolved on-site'
+    issues: 'Power connection loose, resolved on-site',
+    machineId: 'CM-001',
+    workOrderId: 'WO-CM-127',
+    priority: 'High',
+    type: 'Emergency Repair',
+    partsUsed: ['Power Cable Connector', 'Electrical Contact Cleaner'],
+    steps: [
+      'Checked main power connection - found loose connector',
+      'Inspected power cable for damage - cable intact',
+      'Cleaned electrical contacts with contact cleaner',
+      'Secured power connector and tested startup',
+      'Verified all safety systems functioning properly'
+    ],
+    recommendations: 'Schedule quarterly electrical inspection to prevent similar issues',
+    cost: '$45.50',
+    followUpRequired: false
   },
   {
+    id: 'LOG-002',
     date: '2025-07-27',
     summary: 'Chat Bot Response: Assisted with coffee quality issues on Machine #002. Recommended descaling and grinder calibration.',
     technician: 'AI Assistant',
     duration: '12 minutes',
-    issues: 'Coffee tasting bitter, mineral buildup detected'
+    issues: 'Coffee tasting bitter, mineral buildup detected',
+    machineId: 'CM-002',
+    workOrderId: null,
+    priority: 'Medium',
+    type: 'Preventive Maintenance',
+    partsUsed: ['Descaling Solution', 'Water Filter'],
+    steps: [
+      'Tested coffee sample - confirmed bitter taste',
+      'Checked water quality and temperature settings',
+      'Performed descaling procedure',
+      'Replaced water filter',
+      'Calibrated grinder settings',
+      'Tested final brew quality - normal taste restored'
+    ],
+    recommendations: 'Increase descaling frequency to bi-weekly during high usage periods',
+    cost: '$23.75',
+    followUpRequired: true,
+    followUpDate: '2025-08-10'
   },
   {
+    id: 'LOG-003',
     date: '2025-07-26',
     summary: 'Chat Bot Response: Created work order WO-CM-126 for steam wand malfunction on Machine #003. Provided immediate safety guidance.',
     technician: 'AI Assistant',
     duration: '15 minutes',
-    issues: 'Steam pressure irregular, safety concern addressed'
+    issues: 'Steam pressure irregular, safety concern addressed',
+    machineId: 'CM-003',
+    workOrderId: 'WO-CM-126',
+    priority: 'High',
+    type: 'Safety Issue',
+    partsUsed: ['Steam Wand Assembly', 'Pressure Relief Valve'],
+    steps: [
+      'Immediately shut down steam system for safety',
+      'Tested pressure relief valve - found stuck valve',
+      'Replaced faulty pressure relief valve',
+      'Inspected steam wand for blockages',
+      'Replaced entire steam wand assembly as precaution',
+      'Pressure tested system - all readings normal'
+    ],
+    recommendations: 'Install pressure monitoring system for early warning',
+    cost: '$127.40',
+    followUpRequired: true,
+    followUpDate: '2025-08-02'
   },
   {
+    id: 'LOG-004',
     date: '2025-07-25',
     summary: 'Quarterly maintenance inspection completed. All systems operational. Replaced water filters and updated calibration settings.',
     technician: 'Mike Rodriguez',
     duration: '85 minutes',
-    issues: 'Routine maintenance, no issues found'
+    issues: 'Routine maintenance, no issues found',
+    machineId: 'CM-004',
+    workOrderId: null,
+    priority: 'Low',
+    type: 'Scheduled Maintenance',
+    partsUsed: ['Water Filter Set', 'Calibration Kit'],
+    steps: [
+      'Performed complete system inspection',
+      'Replaced all water filters',
+      'Calibrated temperature and pressure settings',
+      'Cleaned and lubricated moving parts',
+      'Updated firmware to latest version',
+      'Documented all settings and configurations'
+    ],
+    recommendations: 'Continue quarterly maintenance schedule',
+    cost: '$89.25',
+    followUpRequired: false
   },
   {
-    date: '2025-07-24',
-    summary: 'Chat Bot Response: Guided user through grinder cleaning procedure. Provided video tutorial and step-by-step instructions.',
+    id: 'LOG-005',
+    date: '2025-07-22',
+    summary: 'Chat Bot Response: Created work order WO-CM-125 for routine maintenance on Machine #005. Scheduled preventive service.',
     technician: 'AI Assistant',
-    duration: '18 minutes',
-    issues: 'Coffee grounds backing up, cleaning resolved issue'
+    duration: '5 minutes',
+    issues: 'Preventive maintenance scheduling',
+    machineId: 'CM-005',
+    workOrderId: 'WO-CM-125',
+    priority: 'Low',
+    type: 'Preventive Scheduling',
+    partsUsed: [],
+    steps: [
+      'Reviewed maintenance history',
+      'Identified upcoming service requirements',
+      'Created preventive maintenance work order',
+      'Scheduled technician assignment',
+      'Updated maintenance calendar'
+    ],
+    recommendations: 'Maintain proactive scheduling approach',
+    cost: '$0.00',
+    followUpRequired: true,
+    followUpDate: '2025-07-30'
   },
   {
     date: '2025-07-23',

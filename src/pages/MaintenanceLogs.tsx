@@ -22,15 +22,21 @@ import {
   Fab,
   Divider,
   Alert,
+  CircularProgress,
+  FormControlLabel,
+  Switch,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DownloadIcon from '@mui/icons-material/Download';
 import SearchIcon from '@mui/icons-material/Search';
 import BuildIcon from '@mui/icons-material/Build';
 import AssignmentIcon from '@mui/icons-material/Assignment';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import SmartToyIcon from '@mui/icons-material/SmartToy';
 import { jsPDF } from 'jspdf';
 import { useTranslation } from 'react-i18next';
 import { demoConfig } from '../config/demoConfig';
+import { generateIndividualLogPDF } from '../utils/pdfGenerator';
 
 // Demo maintenance logs data
 const demoMaintenanceLogs = [
@@ -134,7 +140,7 @@ interface Log {
 }
 
 const MaintenanceLogs: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   // Initialize logs from localStorage or demo data
   const initializeLogs = (): Log[] => {
     const savedLogs = localStorage.getItem('maintenanceLogs');
@@ -155,6 +161,8 @@ const MaintenanceLogs: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedLog, setSelectedLog] = useState<Log | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [pdfProgress, setPdfProgress] = useState<string>('');
   const [newLogForm, setNewLogForm] = useState({
     machine: '',
     type: '',
@@ -253,6 +261,45 @@ const MaintenanceLogs: React.FC = () => {
     });
     
     doc.save('maintenance-logs-report.pdf');
+  };
+
+  const handleGenerateIndividualPDF = async (log: Log, includeAI: boolean = true) => {
+    setIsGeneratingPDF(true);
+    setPdfProgress('Initializing PDF generation...');
+    
+    try {
+      const currentLanguage = i18n.language;
+      console.log('🔄 Starting PDF generation for:', log.workOrder, 'in language:', currentLanguage);
+      
+      if (includeAI) {
+        setPdfProgress('Generating AI-enhanced content...');
+        console.log('🤖 AI enhancement enabled');
+        await new Promise(resolve => setTimeout(resolve, 500)); // Small delay for UX
+      } else {
+        setPdfProgress('Creating basic PDF...');
+        console.log('📄 Basic PDF mode');
+      }
+      
+      setPdfProgress('Creating PDF document...');
+      await generateIndividualLogPDF(log, currentLanguage, includeAI);
+      
+      setPdfProgress('PDF generated successfully!');
+      console.log('✅ PDF generation completed successfully');
+      
+      setTimeout(() => {
+        setIsGeneratingPDF(false);
+        setPdfProgress('');
+      }, 1500);
+      
+    } catch (error) {
+      console.error('❌ Error generating individual PDF:', error);
+      setPdfProgress(`Error: ${error instanceof Error ? error.message : 'PDF generation failed'}`);
+      
+      setTimeout(() => {
+        setIsGeneratingPDF(false);
+        setPdfProgress('');
+      }, 3000);
+    }
   };
 
   const getPriorityColor = (priority: string) => {
@@ -425,9 +472,24 @@ const MaintenanceLogs: React.FC = () => {
                   <Typography variant="body2" color="text.secondary">
                     👨‍🔧 {log.technician}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    📅 {log.date}
-                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      📅 {log.date}
+                    </Typography>
+                    <Tooltip title={t('maintenanceLogs.downloadIndividual')}>
+                      <IconButton 
+                        size="small" 
+                        color="primary"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleGenerateIndividualPDF(log, true);
+                        }}
+                        disabled={isGeneratingPDF}
+                      >
+                        <PictureAsPdfIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
                 </Box>
               </CardContent>
             </Card>
@@ -520,7 +582,33 @@ const MaintenanceLogs: React.FC = () => {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setSelectedLog(null)}>Close</Button>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                variant="outlined"
+                startIcon={<PictureAsPdfIcon />}
+                onClick={() => handleGenerateIndividualPDF(selectedLog!, false)}
+                disabled={isGeneratingPDF}
+              >
+                {t('maintenanceLogs.basicPdf')}
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={<SmartToyIcon />}
+                onClick={() => handleGenerateIndividualPDF(selectedLog!, true)}
+                disabled={isGeneratingPDF}
+                sx={{
+                  background: 'linear-gradient(45deg, #667eea 30%, #764ba2 90%)',
+                  '&:hover': {
+                    background: 'linear-gradient(45deg, #5a6fd8 30%, #6a4190 90%)',
+                  }
+                }}
+              >
+                {t('maintenanceLogs.aiEnhancedPdf')}
+              </Button>
+            </Box>
+            <Button onClick={() => setSelectedLog(null)}>Close</Button>
+          </Box>
         </DialogActions>
       </Dialog>
 
@@ -608,6 +696,29 @@ const MaintenanceLogs: React.FC = () => {
           <Button onClick={() => setShowCreateDialog(false)}>Cancel</Button>
           <Button onClick={handleCreateLog} variant="contained">Create Log</Button>
         </DialogActions>
+      </Dialog>
+
+      {/* PDF Generation Progress Dialog */}
+      <Dialog open={isGeneratingPDF} disableEscapeKeyDown>
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <SmartToyIcon color="primary" />
+            <Typography variant="h6">{t('maintenanceLogs.generatingPdf')}</Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, py: 2 }}>
+            <CircularProgress />
+            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center' }}>
+              {pdfProgress}
+            </Typography>
+            <Alert severity="info" sx={{ mt: 1 }}>
+              {t('maintenanceLogs.pdfGenerating', { 
+                language: i18n.language === 'es' ? 'Spanish' : i18n.language === 'fr' ? 'French' : 'English' 
+              })}
+            </Alert>
+          </Box>
+        </DialogContent>
       </Dialog>
     </Box>
   );

@@ -125,7 +125,8 @@ const ResourceNode: React.FC<{
   item: ResourceItem;
   onSelect: (item: ResourceItem) => void;
   onAttachResource: (item: ResourceItem) => void;
-}> = ({ item, onSelect, onAttachResource }) => {
+  t: (key: string) => string;
+}> = ({ item, onSelect, onAttachResource, t }) => {
   if (item.type === 'directory') {
     return (
       <Accordion disableGutters elevation={0}>
@@ -145,6 +146,7 @@ const ResourceNode: React.FC<{
                   item={child}
                   onSelect={onSelect}
                   onAttachResource={onAttachResource}
+                  t={t}
                 />
               </Box>
             ))
@@ -197,7 +199,7 @@ const ResourceNode: React.FC<{
         ) : (
           <ListItemText
             primary={item.name || 'unknown'}
-            secondary={item.name?.endsWith('.txt') ? 'Text File' : 'Binary File'}
+            secondary={item.name?.endsWith('.txt') ? t('admin.textFile') : t('admin.binaryFile')}
             primaryTypographyProps={{ 
               variant: 'body2',
               sx: { color: 'rgba(30, 41, 59, 0.9)', fontWeight: 600 }
@@ -217,7 +219,7 @@ const ResourceNode: React.FC<{
               onAttachResource(item);
             }}
           >
-            Attach
+            {t('admin.attach')}
           </Button>
         )}
       </ListItem>
@@ -286,7 +288,7 @@ const AdminPanel: React.FC = () => {
       </Box>
       <Box component="footer" sx={{ textAlign: 'center', p: 1 }}>
         <Typography variant="body2" sx={{ color: 'rgba(30, 41, 59, 0.7)' }}>
-          &copy; {new Date().getFullYear()} My Company - All Rights Reserved
+          &copy; {new Date().getFullYear()} {t('admin.copyrightNotice')}
         </Typography>
       </Box>
     </Box>
@@ -1656,11 +1658,11 @@ See main parts catalog for complete listings and pricing.
     <>
       {demoConfig.isDemo && <DemoBanner />}
       <Tabs value={tab} onChange={handleTabChange} sx={{ mb: 2 }}>
-        <Tab label="☕ Technicians" />
-        <Tab label="📚 Resources" />
-        <Tab label="⚙️ Coffee Machines" />
-        <Tab label="🔗 QR Codes" />
-        <Tab label="📍 Locations" />
+        <Tab label={t('tabs.technicians')} />
+        <Tab label={t('tabs.resources')} />
+        <Tab label={t('tabs.machines')} />
+        <Tab label={t('tabs.qrCodes')} />
+        <Tab label={t('tabs.locations')} />
       </Tabs>
 
       {/* TAB 0: USERS */}
@@ -1723,6 +1725,7 @@ See main parts catalog for complete listings and pricing.
                   item={rItem}
                   onSelect={handleSelectResource}
                   onAttachResource={handleAttachResource}
+                  t={t}
                 />
               </Box>
             ))}

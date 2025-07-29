@@ -9,6 +9,33 @@ import { demoWorkOrders, demoPastLogs, demoMachineOptions } from '../data/demoDa
 import { demoConfig } from '../config/demoConfig';
 import { configService } from '../services/configService';
 
+/**
+ * Simple language detection for demo responses
+ */
+const detectLanguage = (text: string): 'en' | 'es' | 'fr' => {
+  const lowerText = text.toLowerCase();
+  
+  // Spanish indicators
+  const spanishWords = ['hola', 'ayuda', 'problema', 'máquina', 'café', 'sí', 'no', 'gracias', 'por favor', 'necesito', 'tengo', 'está', 'como', 'que', 'el', 'la', 'los', 'las', 'con', 'sin'];
+  const spanishMatches = spanishWords.filter(word => lowerText.includes(word)).length;
+  
+  // French indicators
+  const frenchWords = ['bonjour', 'aide', 'problème', 'machine', 'café', 'oui', 'non', 'merci', 's\'il vous plaît', 'j\'ai', 'besoin', 'est', 'comment', 'que', 'le', 'la', 'les', 'avec', 'sans'];
+  const frenchMatches = frenchWords.filter(word => lowerText.includes(word)).length;
+  
+  // Return the language with most matches, default to English
+  if (spanishMatches > frenchMatches && spanishMatches > 0) return 'es';
+  if (frenchMatches > spanishMatches && frenchMatches > 0) return 'fr';
+  return 'en';
+};
+
+/**
+ * Get localized text based on detected language
+ */
+const getLocalizedText = (lang: 'en' | 'es' | 'fr', texts: { en: string; es: string; fr: string }): string => {
+  return texts[lang] || texts.en;
+};
+
 // OpenAI Configuration with runtime environment variable fetching
 const getOpenAIKey = (): string => {
   // Helper function to validate API key value
@@ -241,6 +268,7 @@ ${conversationContext}
 - Maintain natural conversation flow
 - Remember and build upon previous exchanges
 - Be helpful and solution-oriented
+- **RESPOND IN THE SAME LANGUAGE AS THE USER'S INPUT**: Always detect and match the language of the user's message. If they write in Spanish, respond in Spanish. If they write in French, respond in French. If they write in English, respond in English.
 
 Respond naturally and contextually, maintaining conversation continuity while providing expert maintenance assistance.`;
 };
@@ -395,7 +423,7 @@ const generateAIStyleResponse = (
   
   // Handle different conversation scenarios
   if (intent === 'greeting') {
-    return generateGreetingResponse(context, machine, workOrder);
+    return generateGreetingResponse(context, machine, workOrder, message);
   }
   
   if (!context.selectedMachine && needsMachineSelection(message.toLowerCase())) {
@@ -452,16 +480,35 @@ const generateAIStyleResponse = (
 const generateGreetingResponse = (
   context: ConversationContext,
   machine: any,
-  workOrder: any
+  workOrder: any,
+  userMessage: string = ''
 ): ContextualResponse => {
-  let text = "Hello! I'm your AI coffee machine maintenance assistant. ";
+  const detectedLang = detectLanguage(userMessage);
+  
+  let text = getLocalizedText(detectedLang, {
+    en: "Hello! I'm your AI coffee machine maintenance assistant. ",
+    es: "¡Hola! Soy tu asistente de IA para mantenimiento de máquinas de café. ",
+    fr: "Bonjour! Je suis votre assistant IA pour la maintenance des machines à café. "
+  });
   
   if (workOrder) {
-    text += `I see we have an active work order (${workOrder.id}) for ${workOrder.task}. How can I help you continue with this?`;
+    text += getLocalizedText(detectedLang, {
+      en: `I see we have an active work order (${workOrder.id}) for ${workOrder.task}. How can I help you continue with this?`,
+      es: `Veo que tenemos una orden de trabajo activa (${workOrder.id}) para ${workOrder.task}. ¿Cómo puedo ayudarte a continuar con esto?`,
+      fr: `Je vois que nous avons un ordre de travail actif (${workOrder.id}) pour ${workOrder.task}. Comment puis-je vous aider à continuer avec ceci?`
+    });
   } else if (machine) {
-    text += `I notice you're working with ${machine.label}. What can I help you with today?`;
+    text += getLocalizedText(detectedLang, {
+      en: `I notice you're working with ${machine.label}. What can I help you with today?`,
+      es: `Noto que estás trabajando con ${machine.label}. ¿En qué puedo ayudarte hoy?`,
+      fr: `Je remarque que vous travaillez avec ${machine.label}. Comment puis-je vous aider aujourd'hui?`
+    });
   } else {
-    text += "I'm here to help you with troubleshooting, maintenance, work orders, and any questions about your coffee machines. What would you like assistance with?";
+    text += getLocalizedText(detectedLang, {
+      en: "I'm here to help you with troubleshooting, maintenance, work orders, and any questions about your coffee machines. What would you like assistance with?",
+      es: "Estoy aquí para ayudarte con la resolución de problemas, mantenimiento, órdenes de trabajo y cualquier pregunta sobre tus máquinas de café. ¿Con qué te gustaría que te ayude?",
+      fr: "Je suis là pour vous aider avec le dépannage, la maintenance, les ordres de travail et toute question concernant vos machines à café. Avec quoi aimeriez-vous de l'aide?"
+    });
   }
   
   return {
@@ -478,16 +525,35 @@ const generateGreetingResponse = (
  */
 const generateMachineSelectionResponse = (message: string): ContextualResponse => {
   const machineHint = extractMachineHint(message);
+  const detectedLang = detectLanguage(message);
   
   let text = machineHint 
-    ? `I see you mentioned "${machineHint}". Let me help you select the correct machine. `
-    : "I'd be happy to help with your coffee machine issue! ";
+    ? getLocalizedText(detectedLang, {
+        en: `I see you mentioned "${machineHint}". Let me help you select the correct machine. `,
+        es: `Veo que mencionaste "${machineHint}". Permíteme ayudarte a seleccionar la máquina correcta. `,
+        fr: `Je vois que vous avez mentionné "${machineHint}". Laissez-moi vous aider à sélectionner la bonne machine. `
+      })
+    : getLocalizedText(detectedLang, {
+        en: "I'd be happy to help with your coffee machine issue! ",
+        es: "¡Estaré encantado de ayudarte con el problema de tu máquina de café! ",
+        fr: "Je serais ravi de vous aider avec votre problème de machine à café! "
+      });
   
-  text += `We have several coffee machines available:\n\n`;
+  text += getLocalizedText(detectedLang, {
+    en: `We have several coffee machines available:\n\n`,
+    es: `Tenemos varias máquinas de café disponibles:\n\n`,
+    fr: `Nous avons plusieurs machines à café disponibles:\n\n`
+  });
+  
   text += demoMachineOptions.map((m, i) => 
     `${i + 1}. ${m.label} (ID: ${m.machineNumber})`
   ).join('\n');
-  text += `\n\nWhich machine would you like to work with? You can tell me the number or name.`;
+  
+  text += getLocalizedText(detectedLang, {
+    en: `\n\nWhich machine would you like to work with? You can tell me the number or name.`,
+    es: `\n\n¿Con qué máquina te gustaría trabajar? Puedes decirme el número o el nombre.`,
+    fr: `\n\nAvec quelle machine aimeriez-vous travailler? Vous pouvez me dire le numéro ou le nom.`
+  });
   
   return {
     text,

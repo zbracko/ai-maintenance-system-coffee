@@ -33,7 +33,9 @@ import {
   Select,
   InputLabel,
   FormControl,
-  IconButton
+  IconButton,
+  Chip,
+  CircularProgress
 } from '@mui/material';
 
 import { Html5Qrcode, Html5QrcodeCameraScanConfig } from 'html5-qrcode';
@@ -50,6 +52,9 @@ import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import VideoCallIcon from '@mui/icons-material/VideoCall';
 import FeedbackIcon from '@mui/icons-material/Feedback';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import CloseIcon from '@mui/icons-material/Close';
+import DownloadIcon from '@mui/icons-material/Download';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 
 import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
@@ -77,6 +82,17 @@ import { useTranslation } from 'react-i18next';
 
 // Import OpenAI integration
 import { getOpenAIResponse, ConversationContext as OpenAIConversationContext, updateContextFromMessage } from '../../utils/openai';
+
+// Import Work Order and Log utilities
+import { 
+  getRelatedLog, 
+  getRelatedWorkOrder, 
+  downloadLogPDF, 
+  generateAIReport, 
+  downloadAIReportPDF,
+  type WorkOrder,
+  type MaintenanceLog
+} from '../../utils/workOrderLogUtils';
 
 // Demo mode - disable real API calls
 const REACT_APP_API_BASE_URL = demoConfig.useRealAPI ? "https://c5pnv814u2.execute-api.us-west-1.amazonaws.com" : null;
@@ -156,7 +172,7 @@ type ChatFlow =
   | 'partsReplacedStep1'
   | 'partsReplacedStep2';
 
-interface WorkOrder {
+interface LocalWorkOrder {
   id: string;
   task: string;
   timeSpent: string;
@@ -197,7 +213,7 @@ interface PartOption {
 }
 
 // Mock data for Coffee Machine demonstration - Use demo data instead
-const mockWorkOrders: WorkOrder[] = demoWorkOrders.map(wo => ({
+const mockWorkOrders: LocalWorkOrder[] = demoWorkOrders.map(wo => ({
   id: wo.id,
   task: wo.task,
   timeSpent: wo.timeSpent,
@@ -285,7 +301,19 @@ const generateSessionId = (): string => {
 // ================================================================
 
 const ChatInterface: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  
+  // Update current language when i18n language changes
+  useEffect(() => {
+    const currentLang = i18n.language;
+    if (currentLang.startsWith('es')) {
+      setCurrentLanguage('es');
+    } else if (currentLang.startsWith('fr')) {
+      setCurrentLanguage('fr');
+    } else {
+      setCurrentLanguage('en');
+    }
+  }, [i18n.language]);
 
   // ================================================================
   // STATE MANAGEMENT
@@ -314,7 +342,7 @@ const ChatInterface: React.FC = () => {
     { sender: 'bot', text: t('chat.initialMessage') }
   ]);
   const [input, setInput] = useState('');
-  const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
+  const [workOrders, setWorkOrders] = useState<LocalWorkOrder[]>([]);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const sliderRef = useRef<Slider | null>(null);
@@ -327,7 +355,7 @@ const ChatInterface: React.FC = () => {
 
   const [chatFlow, setChatFlow] = useState<ChatFlow>('idle');
 
-  const [selectedWO, setSelectedWO] = useState<WorkOrder | null>(null);
+  const [selectedWO, setSelectedWO] = useState<LocalWorkOrder | null>(null);
   const [machineNumber, setMachineNumber] = useState<string>('');
   const [safetyChecks, setSafetyChecks] = useState<SafetyCheck[]>(initialSafetyChecks);
   const [parts, setParts] = useState<PartOption[]>(initialParts);
@@ -443,6 +471,14 @@ const ChatInterface: React.FC = () => {
       return newMemory;
     });
   };
+  // ====================================
+  
+  // ======== WORK ORDER-LOG MANAGEMENT STATE ========
+  const [selectedWorkOrderForLog, setSelectedWorkOrderForLog] = useState<WorkOrder | null>(null);
+  const [selectedLog, setSelectedLog] = useState<MaintenanceLog | null>(null);
+  const [showLogDetails, setShowLogDetails] = useState<boolean>(false);
+  const [aiReportGenerating, setAiReportGenerating] = useState<boolean>(false);
+  const [currentLanguage, setCurrentLanguage] = useState<'en' | 'es' | 'fr'>('en');
   // ====================================
 
   // Show welcome message on component mount with enhanced showcase features
@@ -562,6 +598,51 @@ const ChatInterface: React.FC = () => {
 
   // Handle option button clicks during troubleshooting
   const handleOptionSelection = (option: string) => {
+    // Check if this is a work order-log button
+    const isViewRelatedLog = option === t('workOrderLog.viewRelatedLog') || 
+                            option === 'View Related Log' || 
+                            option === 'Ver Registro Relacionado' || 
+                            option === 'Voir le Journal Associé';
+    
+    const isDownloadLog = option === t('workOrderLog.downloadLog') || 
+                         option === 'Download Log' || 
+                         option === 'Descargar Registro' || 
+                         option === 'Télécharger le Journal';
+    
+    const isGenerateAIReport = option === t('workOrderLog.generateAIReport') || 
+                              option === 'Generate AI Report' || 
+                              option === 'Generar Reporte con IA' || 
+                              option === 'Générer un Rapport IA';
+    
+    // Check if this is a "View Log for [workOrderId]" button
+    const viewLogMatch = option.match(/^View Log for (WO-\d+)$/);
+    
+    // Handle work order-log specific buttons
+    if (isViewRelatedLog && selectedWorkOrderForLog) {
+      handleViewRelatedLog(selectedWorkOrderForLog);
+      return;
+    }
+    
+    if (isDownloadLog && selectedLog) {
+      handleDownloadLog();
+      return;
+    }
+    
+    if (isGenerateAIReport && selectedWorkOrderForLog) {
+      handleGenerateAIReport();
+      return;
+    }
+    
+    // Handle dynamic "View Log for [workOrderId]" buttons
+    if (viewLogMatch) {
+      const workOrderId = viewLogMatch[1];
+      const workOrder = demoWorkOrders.find(wo => wo.id === workOrderId);
+      if (workOrder) {
+        handleViewRelatedLog(workOrder);
+        return;
+      }
+    }
+    
     // Add user message showing selection
     setMessages(prev => [...prev, {
       sender: 'user',
@@ -1394,7 +1475,7 @@ const ChatInterface: React.FC = () => {
         setWorkOrders(fetchedOrders);
         if (fetchedOrders.length > 0) {
           addBotMessage(t('chat.workOrdersPrompt'));
-          fetchedOrders.forEach((wo: WorkOrder, i: number) => {
+          fetchedOrders.forEach((wo: LocalWorkOrder, i: number) => {
             addBotMessage(`${i + 1}) ${wo.id} - ${wo.task}`);
           });
         } else {
@@ -1514,12 +1595,27 @@ const ChatInterface: React.FC = () => {
                   return;
                   
                 case '📋 Show Work Orders':
+                  const workOrdersWithButtons = demoWorkOrders.slice(0, 3).map((wo, index) => {
+                    const relatedLog = getRelatedLog(wo.id);
+                    const hasRelatedLog = relatedLog !== null;
+                    
+                    return `${index + 1}. **${wo.id}** - ${wo.task}\n   📍 ${wo.location} | ⏰ ${wo.status} | 🔧 ${wo.assignedTo}${hasRelatedLog ? '\n   📝 Related maintenance log available' : ''}`;
+                  }).join('\n\n');
+                  
+                  const workOrderButtons = demoWorkOrders.slice(0, 3).reduce((buttons: string[], wo) => {
+                    const relatedLog = getRelatedLog(wo.id);
+                    if (relatedLog) {
+                      buttons.push(`View Log for ${wo.id}`);
+                    }
+                    return buttons;
+                  }, []);
+                  
                   addBotMessage(
-                    `📋 **Current Work Orders (${demoWorkOrders.length} active)**\n\n` +
-                    demoWorkOrders.slice(0, 3).map((wo, index) => 
-                      `${index + 1}. **${wo.id}** - ${wo.task}\n   📍 ${wo.location} | ⏰ ${wo.status} | 🔧 ${wo.assignedTo}`
-                    ).join('\n\n') +
-                    `\n\n💬 **Try saying:**\n• "Show details for ${demoWorkOrders[0].id}"\n• "Create new work order for machine 002"\n• "Update work order with completion notes"`
+                    `📋 **Current Work Orders (${demoWorkOrders.length} active)**\n\n${workOrdersWithButtons}\n\n💬 **Try saying:**\n• "Show details for ${demoWorkOrders[0].id}"\n• "Create new work order for machine 002"\n• "Update work order with completion notes"`,
+                    undefined,
+                    undefined,
+                    undefined,
+                    workOrderButtons.length > 0 ? workOrderButtons : undefined
                   );
                   setLoadingResponse(false);
                   return;
@@ -1824,7 +1920,7 @@ const ChatInterface: React.FC = () => {
     }
   };
 
-  const parseWorkOrderSelection = (userText: string): WorkOrder | null => {
+  const parseWorkOrderSelection = (userText: string): LocalWorkOrder | null => {
     const lc = userText.toLowerCase();
     const num = parseInt(lc, 10);
     if (!isNaN(num) && num > 0 && num <= workOrders.length) {
@@ -1835,7 +1931,7 @@ const ChatInterface: React.FC = () => {
   };
 
   // When a work order is selected, populate the chat with details and reset chat flow.
-  const selectWorkOrder = (wo: WorkOrder) => {
+  const selectWorkOrder = (wo: LocalWorkOrder) => {
     setSelectedWO(wo);
     setChatFlow('idle');
     const workOrderDetails = `Work Order Selected:
@@ -2176,6 +2272,100 @@ Comments: ${wo.comments}`;
     addBotMessage(t('chat.flowReset'));
   };
 
+  // ================================================================
+  // WORK ORDER-LOG MANAGEMENT FUNCTIONS
+  // ================================================================
+
+  /**
+   * Handle viewing related log for a work order
+   */
+  const handleViewRelatedLog = (workOrder: WorkOrder) => {
+    const relatedLog = getRelatedLog(workOrder.id);
+    if (relatedLog) {
+      setSelectedWorkOrderForLog(workOrder);
+      setSelectedLog(relatedLog);
+      setShowLogDetails(true);
+      
+      // Display log details in chat
+      const logMessage = `📋 **${t('workOrderLog.logDetails')}**\n\n` +
+        `**${t('workOrderLog.relatedWorkOrder')}:** ${workOrder.id} - ${workOrder.task}\n\n` +
+        `**${t('workOrderLog.logDetails')}:**\n` +
+        `• **${t('workOrderLog.machineId')}:** ${relatedLog.machineId || 'N/A'}\n` +
+        `• **${t('workOrderLog.technician')}:** ${relatedLog.technician}\n` +
+        `• **${t('workOrderLog.duration')}:** ${relatedLog.duration}\n` +
+        `• **${t('workOrderLog.priority')}:** ${relatedLog.priority || 'N/A'}\n` +
+        `• **${t('workOrderLog.type')}:** ${relatedLog.type || 'N/A'}\n` +
+        `• **${t('workOrderLog.cost')}:** ${relatedLog.cost || 'N/A'}\n\n` +
+        `**Summary:** ${relatedLog.summary}\n\n` +
+        `**Issues:** ${relatedLog.issues}\n\n` +
+        (relatedLog.partsUsed && relatedLog.partsUsed.length > 0 ? 
+          `**${t('workOrderLog.partsUsed')}:**\n${relatedLog.partsUsed.map(part => `• ${part}`).join('\n')}\n\n` : '') +
+        (relatedLog.steps && relatedLog.steps.length > 0 ? 
+          `**${t('workOrderLog.stepsPerformed')}:**\n${relatedLog.steps.map((step, i) => `${i + 1}. ${step}`).join('\n')}\n\n` : '') +
+        (relatedLog.recommendations ? `**${t('workOrderLog.recommendations')}:** ${relatedLog.recommendations}\n\n` : '') +
+        (relatedLog.followUpRequired ? 
+          `**${t('workOrderLog.followUpRequired')}:** Yes${relatedLog.followUpDate ? ` (${relatedLog.followUpDate})` : ''}\n\n` : '');
+      
+      addBotMessage(logMessage, [], [], [], [
+        t('workOrderLog.downloadLog'),
+        t('workOrderLog.generateAIReport')
+      ]);
+    } else {
+      addBotMessage(`❌ ${t('workOrderLog.logNotFound')} ${workOrder.id}`);
+    }
+  };
+
+  /**
+   * Handle downloading individual log as PDF
+   */
+  const handleDownloadLog = () => {
+    if (selectedLog) {
+      downloadLogPDF(selectedLog, currentLanguage);
+      addBotMessage(`✅ ${t('workOrderLog.downloadLog')} ${selectedLog.id} downloaded successfully.`);
+    }
+  };
+
+  /**
+   * Handle generating AI report for work order and log
+   */
+  const handleGenerateAIReport = async () => {
+    if (!selectedWorkOrderForLog) return;
+    
+    setAiReportGenerating(true);
+    addBotMessage(`🤖 ${t('workOrderLog.aiReportGenerating')}`);
+    
+    try {
+      const reportContent = await generateAIReport(selectedWorkOrderForLog, selectedLog, currentLanguage);
+      
+      // Display the AI report in chat
+      const reportMessage = `🤖 **AI-Generated Maintenance Report**\n\n${reportContent}`;
+      addBotMessage(reportMessage, [], [], [], [t('workOrderLog.downloadReport')]);
+      
+      setAiReportGenerating(false);
+      addBotMessage(`✅ ${t('workOrderLog.aiReportReady')}`);
+    } catch (error) {
+      console.error('Error generating AI report:', error);
+      setAiReportGenerating(false);
+      addBotMessage(`❌ Error generating AI report. Please try again.`);
+    }
+  };
+
+  /**
+   * Handle downloading AI report as PDF
+   */
+  const handleDownloadAIReport = async () => {
+    if (!selectedWorkOrderForLog) return;
+    
+    try {
+      const reportContent = await generateAIReport(selectedWorkOrderForLog, selectedLog, currentLanguage);
+      downloadAIReportPDF(reportContent, selectedWorkOrderForLog, currentLanguage);
+      addBotMessage(`✅ AI Report for ${selectedWorkOrderForLog.id} downloaded successfully.`);
+    } catch (error) {
+      console.error('Error downloading AI report:', error);
+      addBotMessage(`❌ Error downloading AI report. Please try again.`);
+    }
+  };
+
   // ======== NEW FUNCTION: Save note from dialog using confirmed machine (dropdown) ========
   const handleSaveNote = async () => {
     // Combine the original message with additional note text.
@@ -2328,7 +2518,7 @@ Comments: ${wo.comments}`;
               }
             }}
           >
-            AI Maintenance Assistant
+            {t('chatInterface.title')}
           </Typography>
         </Box>
         <Typography 
@@ -2354,14 +2544,14 @@ Comments: ${wo.comments}`;
             }
           }}
         >
-          Your intelligent companion for equipment maintenance, diagnostics, and work order management.
+          {t('chatInterface.subtitle')}
           <br />
           <Box component="span" sx={{ 
             color: 'rgba(30, 41, 59, 0.6)',
             fontSize: '0.9em',
             fontStyle: 'italic'
           }}>
-            Ask me anything or choose from the options below.
+            {t('chatInterface.callToAction')}
           </Box>
         </Typography>
       </Box>
@@ -2691,6 +2881,207 @@ Comments: ${wo.comments}`;
           <div ref={messagesEndRef} />
         </List>
         </Box>
+
+        {/* ======== LOG DETAILS DISPLAY ======== */}
+        {showLogDetails && selectedLog && (
+          <Box
+            sx={{
+              mt: 2,
+              p: 3,
+              background: 'rgba(255, 255, 255, 0.95)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(148, 163, 184, 0.2)',
+              borderRadius: '16px',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+              position: 'relative',
+              animation: 'slideInUp 0.5s ease-out',
+              '@keyframes slideInUp': {
+                '0%': {
+                  opacity: 0,
+                  transform: 'translateY(20px)',
+                },
+                '100%': {
+                  opacity: 1,
+                  transform: 'translateY(0)',
+                }
+              }
+            }}
+          >
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h6" sx={{ color: '#1e293b', fontWeight: 600 }}>
+                {t('workOrderLog.logDetails')}: {selectedLog.workOrderId}
+              </Typography>
+              <IconButton
+                onClick={() => {
+                  setShowLogDetails(false);
+                  setSelectedLog(null);
+                  setSelectedWorkOrderForLog(null);
+                }}
+                size="small"
+                sx={{
+                  color: '#64748b',
+                  '&:hover': {
+                    color: '#e11d48',
+                    backgroundColor: 'rgba(225, 29, 72, 0.1)',
+                  }
+                }}
+              >
+                <CloseIcon />
+              </IconButton>
+            </Box>
+            
+            <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' } }}>
+              <Box>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#64748b', mb: 1 }}>
+                  {t('workOrderLog.basic')}
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  <strong>{t('workOrderLog.technician')}:</strong> {selectedLog.technician}
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  <strong>{t('workOrderLog.dateCompleted')}:</strong> {selectedLog.date}
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  <strong>{t('workOrderLog.timeSpent')}:</strong> {selectedLog.duration}
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  <strong>{t('workOrderLog.status')}:</strong> {selectedLog.type}
+                </Typography>
+              </Box>
+              
+              <Box>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#64748b', mb: 1 }}>
+                  {t('workOrderLog.costs')}
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  <strong>{t('workOrderLog.totalCost')}:</strong> {selectedLog.cost}
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  <strong>Priority:</strong> {selectedLog.priority}
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  <strong>Follow-up Required:</strong> {selectedLog.followUpRequired ? 'Yes' : 'No'}
+                </Typography>
+              </Box>
+            </Box>
+
+            {selectedLog.partsUsed && selectedLog.partsUsed.length > 0 && (
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#64748b', mb: 1 }}>
+                  {t('workOrderLog.partsReplaced')}
+                </Typography>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                  {selectedLog.partsUsed.map((part, index) => (
+                    <Chip
+                      key={index}
+                      label={part}
+                      size="small"
+                      sx={{
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        color: '#065f46',
+                        border: '1px solid rgba(16, 185, 129, 0.3)',
+                      }}
+                    />
+                  ))}
+                </Box>
+              </Box>
+            )}
+
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#64748b', mb: 1 }}>
+                {t('workOrderLog.workPerformed')}
+              </Typography>
+              <Typography variant="body2" sx={{ 
+                color: '#1e293b',
+                backgroundColor: 'rgba(248, 250, 252, 0.8)',
+                p: 2,
+                borderRadius: '8px',
+                border: '1px solid rgba(226, 232, 240, 0.5)',
+                whiteSpace: 'pre-wrap'
+              }}>
+                {selectedLog.summary}
+              </Typography>
+            </Box>
+
+            {selectedLog.steps && selectedLog.steps.length > 0 && (
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#64748b', mb: 1 }}>
+                  {t('workOrderLog.stepsPerformed')}
+                </Typography>
+                <Box sx={{ pl: 2 }}>
+                  {selectedLog.steps.map((step, index) => (
+                    <Typography key={index} variant="body2" sx={{ mb: 0.5, color: '#1e293b' }}>
+                      {index + 1}. {step}
+                    </Typography>
+                  ))}
+                </Box>
+              </Box>
+            )}
+
+            {selectedLog.recommendations && (
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#64748b', mb: 1 }}>
+                  Recommendations
+                </Typography>
+                <Typography variant="body2" sx={{ 
+                  color: '#1e293b',
+                  backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                  p: 2,
+                  borderRadius: '8px',
+                  border: '1px solid rgba(245, 158, 11, 0.3)',
+                  whiteSpace: 'pre-wrap'
+                }}>
+                  {selectedLog.recommendations}
+                </Typography>
+              </Box>
+            )}
+
+            <Box sx={{ 
+              mt: 3, 
+              pt: 2, 
+              borderTop: '1px solid rgba(226, 232, 240, 0.5)',
+              display: 'flex',
+              gap: 2,
+              flexWrap: 'wrap'
+            }}>
+              <Button
+                variant="outlined"
+                startIcon={<DownloadIcon />}
+                onClick={handleDownloadLog}
+                disabled={!selectedLog}
+                sx={{
+                  borderColor: 'rgba(59, 130, 246, 0.5)',
+                  color: '#3b82f6',
+                  '&:hover': {
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                  }
+                }}
+              >
+                {t('workOrderLog.downloadLog')}
+              </Button>
+              
+              <Button
+                variant="contained"
+                startIcon={aiReportGenerating ? <CircularProgress size={16} color="inherit" /> : <AutoAwesomeIcon />}
+                onClick={handleGenerateAIReport}
+                disabled={aiReportGenerating || !selectedWorkOrderForLog}
+                sx={{
+                  background: 'linear-gradient(45deg, #8b5cf6, #a855f7)',
+                  border: 0,
+                  '&:hover': {
+                    background: 'linear-gradient(45deg, #7c3aed, #9333ea)',
+                  },
+                  '&:disabled': {
+                    background: 'rgba(139, 92, 246, 0.3)',
+                  }
+                }}
+              >
+                {aiReportGenerating ? t('workOrderLog.generating') : t('workOrderLog.generateAIReport')}
+              </Button>
+            </Box>
+          </Box>
+        )}
       </Box>
 
       {loadingResponse && (
@@ -2783,7 +3174,7 @@ Comments: ${wo.comments}`;
             }
           }}
         >
-          ✨ Reset Flow
+          {t('chatInterface.resetFlow')}
         </Button>
       </Box>
 
@@ -2802,10 +3193,10 @@ Comments: ${wo.comments}`;
           p: 3
         }}>
           <Typography variant="h6" gutterBottom sx={{ color: '#1e293b', fontWeight: 600 }}>
-            🔧 Select Coffee Machine
+            {t('chatInterface.selectCoffeeMachine')}
           </Typography>
           <FormControl fullWidth>
-            <InputLabel>Machine</InputLabel>
+            <InputLabel>{t('chatInterface.machineLabel')}</InputLabel>
             <Select
               value=""
               onChange={(e) => handleMachineSelection(e.target.value)}
@@ -2846,7 +3237,7 @@ Comments: ${wo.comments}`;
           p: 3
         }}>
           <Typography variant="h6" gutterBottom sx={{ color: '#1e293b', fontWeight: 600 }}>
-            🛠️ Select Issue Type
+            {t('chatInterface.selectIssueType')}
           </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {currentOptions.map((option, index) => (
@@ -3353,7 +3744,7 @@ Comments: ${wo.comments}`;
             <HelpOutlineIcon />
           </ListItemIcon>
           <MUIListItemText 
-            primary="Create help request" 
+            primary={t('chatInterface.createHelpRequest')} 
             sx={{ 
               '& .MuiTypography-root': { 
                 fontWeight: 600,
@@ -3384,7 +3775,7 @@ Comments: ${wo.comments}`;
             <VideoCallIcon />
           </ListItemIcon>
           <MUIListItemText 
-            primary="Schedule video meeting" 
+            primary={t('chatInterface.scheduleVideoMeeting')} 
             sx={{ 
               '& .MuiTypography-root': { 
                 fontWeight: 600,
@@ -3415,7 +3806,7 @@ Comments: ${wo.comments}`;
             <FeedbackIcon />
           </ListItemIcon>
           <MUIListItemText 
-            primary="Send feedback" 
+            primary={t('chatInterface.sendFeedback')} 
             sx={{ 
               '& .MuiTypography-root': { 
                 fontWeight: 600,
@@ -3771,13 +4162,13 @@ Comments: ${wo.comments}`;
             color: '#1e293b',
             fontWeight: 600
           }}>
-            Add a Note
+            {t('chatInterface.addNote')}
           </Typography>
           <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel>Machine</InputLabel>
+            <InputLabel>{t('chatInterface.machineLabel')}</InputLabel>
             <Select
               value={confirmMachine}
-              label="Machine"
+              label={t('chatInterface.machineLabel')}
               onChange={(e) => setConfirmMachine(e.target.value as string)}
             >
               {machineOptionsList.map((option, idx) => (
@@ -3788,7 +4179,7 @@ Comments: ${wo.comments}`;
             </Select>
           </FormControl>
           <Typography variant="body2" sx={{ mb: 2, color: '#1e293b', fontWeight: 500 }}>
-            Original Message:
+            {t('chatInterface.originalMessage')}
           </Typography>
           <Paper sx={{ 
             p: 1, 
@@ -3804,7 +4195,7 @@ Comments: ${wo.comments}`;
             </Typography>
           </Paper>
           <TextField
-            label="Additional Note"
+            label={t('chatInterface.additionalNote')}
             variant="outlined"
             fullWidth
             multiline
@@ -3821,10 +4212,10 @@ Comments: ${wo.comments}`;
                 setAdditionalNote('');
               }}
             >
-              Cancel
+              {t('chatInterface.cancel')}
             </Button>
             <Button variant="contained" onClick={handleSaveNote}>
-              Save Note
+              {t('chatInterface.saveNote')}
             </Button>
           </Stack>
         </Box>
