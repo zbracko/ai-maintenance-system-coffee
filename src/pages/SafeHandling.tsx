@@ -35,25 +35,25 @@ const demoSafetyProcedures = [
       {
         id: 'espresso-power-off',
         text: 'Always switch OFF and unplug espresso machine before any maintenance work',
-        image: '/src/assets/espresso-machine-cleaning.svg',
+        image: '/assets/espresso-machine-cleaning.svg',
         video: null
       },
       {
         id: 'grinder-lockout',
         text: 'Implement lockout procedures for coffee grinder electrical connections',
-        image: '/src/assets/coffee-grinder-operation.svg',
+        image: '/assets/coffee-grinder-operation.svg',
         video: null
       },
       {
         id: 'water-electrical',
         text: 'Ensure no water contact with electrical components during cleaning',
-        image: '/src/assets/steam-wand-cleaning.svg',
+        image: '/assets/steam-wand-cleaning.svg',
         video: null
       },
       {
         id: 'voltage-verification',
         text: 'Use multimeter to verify zero voltage before opening electrical panels',
-        image: '/src/assets/troubleshooting-guide.svg',
+        image: '/assets/troubleshooting-guide.svg',
         video: null
       }
     ]
@@ -67,25 +67,25 @@ const demoSafetyProcedures = [
       {
         id: 'cooling-period',
         text: 'Allow espresso machine to cool for minimum 30 minutes after use before maintenance',
-        image: '/src/assets/espresso-machine-cleaning.svg',
+        image: '/assets/espresso-machine-cleaning.svg',
         video: null
       },
       {
         id: 'heat-resistant-gloves',
         text: 'Use heat-resistant gloves when handling hot portafilters and group heads',
-        image: '/src/assets/steam-wand-cleaning.svg',
+        image: '/assets/steam-wand-cleaning.svg',
         video: null
       },
       {
         id: 'steam-wand-safety',
         text: 'Never remove steam wand tip while system is pressurized',
-        image: '/src/assets/steam-wand-cleaning.svg',
+        image: '/assets/steam-wand-cleaning.svg',
         video: null
       },
       {
         id: 'temperature-monitoring',
         text: 'Use infrared thermometer to verify safe surface temperatures before contact',
-        image: '/src/assets/troubleshooting-guide.svg',
+        image: '/assets/troubleshooting-guide.svg',
         video: null
       }
     ]
@@ -99,25 +99,25 @@ const demoSafetyProcedures = [
       {
         id: 'descaling-ppe',
         text: 'Wear chemical-resistant gloves and eye protection when handling descaling solutions',
-        image: '/src/assets/water-filter-replacement.svg',
+        image: '/assets/water-filter-replacement.svg',
         video: null
       },
       {
         id: 'coffee-ventilation',
         text: 'Ensure adequate ventilation when using espresso machine cleaners',
-        image: '/src/assets/espresso-machine-cleaning.svg',
+        image: '/assets/espresso-machine-cleaning.svg',
         video: null
       },
       {
         id: 'chemical-sds',
         text: 'Review Safety Data Sheets for all coffee cleaning products before use',
-        image: '/src/assets/troubleshooting-guide.svg',
+        image: '/assets/troubleshooting-guide.svg',
         video: null
       },
       {
         id: 'emergency-wash',
         text: 'Know location of emergency eyewash station for chemical exposure',
-        image: '/src/assets/water-filter-replacement.svg',
+        image: '/assets/water-filter-replacement.svg',
         video: null
       }
     ]
@@ -131,25 +131,25 @@ const demoSafetyProcedures = [
       {
         id: 'grinder-burr-safety',
         text: 'Secure coffee grinder burrs and turn off power before cleaning or adjustment',
-        image: '/src/assets/coffee-grinder-operation.svg',
+        image: '/assets/coffee-grinder-operation.svg',
         video: null
       },
       {
         id: 'group-head-caution',
         text: 'Be aware of group head spring tension and moving parts during service',
-        image: '/src/assets/espresso-machine-cleaning.svg',
+        image: '/assets/espresso-machine-cleaning.svg',
         video: null
       },
       {
         id: 'tool-maintenance',
         text: 'Use proper coffee tools and maintain them in good condition',
-        image: '/src/assets/troubleshooting-guide.svg',
+        image: '/assets/troubleshooting-guide.svg',
         video: null
       },
       {
         id: 'machine-lifting',
         text: 'Use proper lifting techniques when moving heavy espresso machines',
-        image: '/src/assets/water-filter-replacement.svg',
+        image: '/assets/water-filter-replacement.svg',
         video: null
       }
     ]

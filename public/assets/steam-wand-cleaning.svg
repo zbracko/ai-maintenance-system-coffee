@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
+  <!-- Background -->
+  <rect x="0" y="0" width="400" height="300" fill="#f8fafc"/>
+  
+  <!-- Steam Wand -->
+  <rect x="150" y="80" width="12" height="120" fill="#a0aec0" rx="6"/>
+  <rect x="148" y="78" width="16" height="8" fill="#718096" rx="4"/>
+  
+  <!-- Steam Wand Tip -->
+  <circle cx="156" cy="205" r="6" fill="#4a5568"/>
+  <circle cx="156" cy="205" r="3" fill="#2d3748"/>
+  
+  <!-- Steam Coming Out -->
+  <ellipse cx="156" cy="220" rx="8" ry="4" fill="rgba(255, 255, 255, 0.7)"/>
+  <ellipse cx="156" cy="230" rx="12" ry="6" fill="rgba(255, 255, 255, 0.5)"/>
+  <ellipse cx="156" cy="242" rx="16" ry="8" fill="rgba(255, 255, 255, 0.3)"/>
+  
+  <!-- Milk Pitcher -->
+  <path d="M120 200 L120 260 Q120 270 130 270 L180 270 Q190 270 190 260 L190 200 Z" fill="#e2e8f0"/>
+  <path d="M120 200 L190 200 L190 210 L120 210 Z" fill="#cbd5e1"/>
+  
+  <!-- Milk in Pitcher -->
+  <path d="M125 210 L125 250 Q125 255 130 255 L175 255 Q180 255 180 250 L180 210 Z" fill="#f7fafc"/>
+  
+  <!-- Frothed Milk -->
+  <ellipse cx="155" cy="200" rx="25" ry="8" fill="#fffbf0"/>
+  <circle cx="145" cy="195" r="3" fill="rgba(255, 255, 255, 0.8)"/>
+  <circle cx="165" cy="197" r="2" fill="rgba(255, 255, 255, 0.8)"/>
+  <circle cx="155" cy="193" r="2.5" fill="rgba(255, 255, 255, 0.8)"/>
+  
+  <!-- Pitcher Handle -->
+  <path d="M190 230 Q200 230 200 240 Q200 250 190 250" stroke="#718096" stroke-width="4" fill="none"/>
+  
+  <!-- Cleaning Cloth -->
+  <rect x="220" y="180" width="40" height="30" fill="#fef5e7" rx="5"/>
+  <path d="M225 185 Q240 175 255 185" stroke="#f6ad55" stroke-width="1" fill="none"/>
+  <path d="M225 195 Q240 185 255 195" stroke="#f6ad55" stroke-width="1" fill="none"/>
+  <path d="M225 205 Q240 195 255 205" stroke="#f6ad55" stroke-width="1" fill="none"/>
+  
+  <!-- Water Container -->
+  <rect x="280" y="160" width="50" height="60" fill="#3182ce" rx="5"/>
+  <rect x="285" y="165" width="40" height="45" fill="#4299e1" rx="3"/>
+  <text x="305" y="155" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#2d3748">Water</text>
+  
+  <!-- Cleaning Solution Bottle -->
+  <rect x="280" y="230" width="30" height="50" fill="#38a169" rx="3"/>
+  <rect x="285" y="225" width="20" height="8" fill="#2f855a" rx="2"/>
+  <circle cx="295" cy="221" r="2" fill="#1a365d"/>
+  <text x="295" y="250" text-anchor="middle" font-family="Arial, sans-serif" font-size="7" fill="white">Clean</text>
+  
+  <!-- Title -->
+  <text x="200" y="30" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#2d3748">
+    Steam Wand Cleaning
+  </text>
+  <text x="200" y="50" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#4a5568">
+    Daily cleaning procedure
+  </text>
+  
+  <!-- Cleaning Steps -->
+  <circle cx="50" cy="120" r="15" fill="#3182ce"/>
+  <text x="50" y="125" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="white">1</text>
+  <text x="50" y="145" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#4a5568">Purge</text>
+  
+  <circle cx="50" cy="170" r="15" fill="#38a169"/>
+  <text x="50" y="175" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="white">2</text>
+  <text x="50" y="195" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#4a5568">Wipe</text>
+  
+  <circle cx="50" cy="220" r="15" fill="#d69e2e"/>
+  <text x="50" y="225" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="white">3</text>
+  <text x="50" y="245" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#4a5568">Rinse</text>
+  
+  <circle cx="50" cy="270" r="15" fill="#9f7aea"/>
+  <text x="50" y="275" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="white">4</text>
+  <text x="50" y="295" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#4a5568">Sanitize</text>
+  
+  <!-- Temperature Indicator -->
+  <rect x="340" y="100" width="20" height="80" fill="#e2e8f0" rx="10"/>
+  <rect x="345" y="160" width="10" height="15" fill="#e53e3e" rx="5"/>
+  <circle cx="350" cy="180" r="7" fill="#e53e3e"/>
+  <text x="350" y="200" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#4a5568">Hot</text>
+  
+  <!-- Cleaning Motion Arrows -->
+  <path d="M200 190 Q210 180 220 190" stroke="#38a169" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+  <path d="M240 200 Q250 190 260 200" stroke="#38a169" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+  
+  <!-- Arrow marker definition -->
+  <defs>
+    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#38a169"/>
+    </marker>
+  </defs>
+  
+  <!-- Steam Effect Lines -->
+  <path d="M150 230 Q145 235 150 240" stroke="#cbd5e1" stroke-width="1" fill="none"/>
+  <path d="M162 230 Q167 235 162 240" stroke="#cbd5e1" stroke-width="1" fill="none"/>
+</svg>

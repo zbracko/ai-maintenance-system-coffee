@@ -1138,7 +1138,7 @@ See main parts catalog for complete listings and pricing.
           const imageMatch = part.match(/\!\[(.*?)\]\((.*?)\)/);
           if (imageMatch) {
             const [, altText, imagePath] = imageMatch;
-            const fullImagePath = imagePath.startsWith('/') ? imagePath : `/src/assets/${imagePath}`;
+            const fullImagePath = imagePath.startsWith('/') ? imagePath : `/assets/${imagePath}`;
             return (
               <Box key={index} sx={{ my: 2, textAlign: 'center' }}>
                 <Box
@@ -2625,7 +2625,7 @@ See main parts catalog for complete listings and pricing.
                 key={imageName}
                 variant="outlined"
                 size="small"
-                onClick={() => handleInsertImage(`/src/assets/${imageName}`, imageName.replace('.svg', '').replace(/-/g, ' '))}
+                onClick={() => handleInsertImage(`/assets/${imageName}`, imageName.replace('.svg', '').replace(/-/g, ' '))}
                 sx={{ textTransform: 'none' }}
               >
                 {imageName.replace('.svg', '').replace(/-/g, ' ')}
@@ -2635,7 +2635,7 @@ See main parts catalog for complete listings and pricing.
           <TextField
             fullWidth
             label="Custom Image Path"
-            placeholder="e.g., /src/assets/my-image.jpg"
+            placeholder="e.g., /assets/my-image.jpg"
             sx={{ mb: 2 }}
             onKeyPress={(e) => {
               if (e.key === 'Enter') {

@@ -1065,7 +1065,7 @@ const ChatInterface: React.FC = () => {
             { text: "4. Timer mechanism in control system" },
             { text: "5. Check if clicking occurs during specific operations" }
           ],
-          images: ["/src/assets/Picture3.png"],
+          images: ["/assets/Picture3.png"],
           options: ['Regular clicking during brewing', 'Random clicking sounds', 'Loud mechanical tapping', 'Start basic troubleshooting', 'Contact technician']
         };
       }
@@ -1080,7 +1080,7 @@ const ChatInterface: React.FC = () => {
             { text: "4. TEST: Try different functions (brew, steam, grind) to isolate the trigger" },
             { text: "5. DOCUMENT: Note when clicking occurs and how frequently" }
           ],
-          images: ["/src/assets/Picture2.png"],
+          images: ["/assets/Picture2.png"],
           options: ['Sound comes from control panel', 'Sound from water system', 'Sound from grinding area', 'Multiple sources', 'Issue resolved']
         };
       }
@@ -1112,7 +1112,7 @@ const ChatInterface: React.FC = () => {
             { text: "4. POWER SWITCH: Ensure main power switch is fully engaged" },
             { text: "5. INDICATOR LIGHTS: Note any lights that turn on when powered" }
           ],
-          images: ["/src/assets/Picture2.png"],
+          images: ["/assets/Picture2.png"],
           options: ['No power at outlet', 'Power cord damaged', 'Lights come on', 'Still no response', 'Machine started working']
         };
       }
@@ -1217,7 +1217,7 @@ const ChatInterface: React.FC = () => {
             { text: "4. Listen for any sounds when pressing the power button" },
             { text: "5. If no response, check circuit breaker and outlet" }
           ],
-          images: ["/src/assets/Picture2.png"],
+          images: ["/assets/Picture2.png"],
           options: ['Lights are on but no response', 'No lights at all', 'Makes sounds but won\'t start', 'Issue resolved', 'Need technician']
         };
         
@@ -1231,7 +1231,7 @@ const ChatInterface: React.FC = () => {
             { text: "4. Check for mineral buildup in brewing chamber" },
             { text: "5. Test extraction timing and pressure" }
           ],
-          images: ["/src/assets/Picture3.png"],
+          images: ["/assets/Picture3.png"],
           options: ['Coffee tastes weak', 'Coffee tastes bitter', 'Temperature issues', 'All quality checks done', 'Schedule deep cleaning']
         };
         
@@ -1245,8 +1245,8 @@ const ChatInterface: React.FC = () => {
             { text: "4. Check for leaks around connections and seals" },
             { text: "5. Test safety valves and pressure relief" }
           ],
-          images: ["/src/assets/Picture4.png"],
-          videos: ["/src/assets/maintenance-video.mp4"],
+          images: ["/assets/Picture4.png"],
+          videos: ["/assets/maintenance-video.mp4"],
           options: ['No water flow', 'Steam not working', 'Water leaking', 'Pump making noise', 'Safety concern']
         };
         
@@ -1286,7 +1286,7 @@ const ChatInterface: React.FC = () => {
             { text: "4. Quarterly: Professional inspection and calibration" },
             { text: "5. Annual: Complete overhaul and part replacement" }
           ],
-          images: ["/src/assets/Picture5.png"],
+          images: ["/assets/Picture5.png"],
           options: ['Daily maintenance', 'Weekly cleaning', 'Monthly descaling', 'Quarterly service', 'View maintenance history']
         };
         
@@ -2712,7 +2712,7 @@ Comments: ${wo.comments}`;
                               {msg.images.map((img, idx) => (
                                 <Box key={idx} textAlign="center">
                                   {/* Display actual images or fallback to placeholder */}
-                                  {img.startsWith('/src/assets/') || img.startsWith('src/assets/') ? (
+                                  {img.startsWith('/assets/') || img.startsWith('assets/') ? (
                                     <Box
                                       component="img"
                                       src={img.startsWith('/') ? img : `/${img}`}
