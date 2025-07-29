@@ -110,26 +110,27 @@ export const demoWorkOrders = [
   {
     id: 'WO-CM-127',
     task: 'Machine won\'t start - Machine #001',
-    timeSpent: 'Pending',
+    timeSpent: '2 hours 15 minutes',
     priority: 'High',
     location: 'Coffee Station - Machine #001',
     asset: 'Coffee Machine #001',
-    description: 'Machine won\'t start reported on Espresso Machine #001 (Front Counter)',
-    requestedBy: 'AI Assistant',
-    assignedTo: 'Available Technician',
+    description: 'Complete power failure on Espresso Machine #001 - no lights, no response to power button. Critical issue affecting morning service.',
+    requestedBy: 'Sarah (Barista)',
+    assignedTo: 'Mike Rodriguez',
     dueDate: '2025-07-29',
-    status: 'Open',
-    steps: `1. Check power connection and outlet
-2. Verify power switch position
-3. Inspect fuses and circuit breakers
-4. Test internal wiring connections
-5. Check control panel functionality`,
+    status: 'Completed',
+    steps: `1. ✅ DIAGNOSED: Power outlet tested - confirmed 120V supply
+2. ✅ IDENTIFIED: Main power fuse blown (F1 - 15A slow blow)
+3. ✅ INVESTIGATED: Found water intrusion in electrical panel from steam leak
+4. ✅ REPAIRED: Replaced blown fuse and sealed steam line connection
+5. ✅ TESTED: Full system startup successful, all functions operational
+6. ✅ VERIFIED: Steam pressure test passed, no further leaks detected`,
     createdDate: '2025-07-28',
-    createdBy: 'ChatBot Assistant',
-    partsUsed: 'TBD - Pending diagnosis',
-    materials: 'Multimeter, test equipment',
-    comments: 'Created via chat interaction - user reported complete power failure',
-    additionalNotes: 'User guided through initial diagnostics via AI assistant',
+    createdBy: 'AI Assistant (Chat)',
+    partsUsed: 'Main Power Fuse F1-15A, Steam Line Gasket SG-004, Electrical Panel Sealant',
+    materials: 'Multimeter, fuse puller, steam pressure tester, electrical tape',
+    comments: 'COMPLETE REPAIR STORY: Customer reported via chat at 6:45 AM that machine completely dead. AI assistant guided initial diagnostics, created work order, and assigned technician. Root cause was steam leak causing electrical short and blown fuse. Full repair completed in 2 hours 15 minutes.',
+    additionalNotes: 'PREVENTIVE ACTION: Recommended monthly electrical panel inspection to prevent water intrusion. Customer satisfaction: Excellent - machine operational before morning rush.',
     machineId: 'CM-001',
     relatedLogId: 'LOG-001'
   },
@@ -306,25 +307,34 @@ export const demoPastLogs = [
   {
     id: 'LOG-001',
     date: '2025-07-28',
-    summary: 'Chat Bot Response: Created work order WO-CM-127 for "Machine won\'t start" issue on Machine #001. User guided through power diagnostics.',
-    technician: 'AI Assistant',
-    duration: '8 minutes',
-    issues: 'Power connection loose, resolved on-site',
+    summary: 'COMPLETE REPAIR LOG: Machine #001 power failure - Chat initiated diagnosis, work order created, full repair completed. Journey: Chat → Diagnosis → Work Order → Repair → Resolution.',
+    technician: 'Mike Rodriguez (with AI Assistant Support)',
+    duration: '2 hours 15 minutes (includes 8 min chat diagnosis)',
+    issues: 'Complete power failure due to blown main fuse caused by steam leak water intrusion',
     machineId: 'CM-001',
     workOrderId: 'WO-CM-127',
     priority: 'High',
     type: 'Emergency Repair',
-    partsUsed: ['Power Cable Connector', 'Electrical Contact Cleaner'],
+    partsUsed: ['Main Power Fuse F1-15A', 'Steam Line Gasket SG-004', 'Electrical Panel Sealant'],
     steps: [
-      'Checked main power connection - found loose connector',
-      'Inspected power cable for damage - cable intact',
-      'Cleaned electrical contacts with contact cleaner',
-      'Secured power connector and tested startup',
-      'Verified all safety systems functioning properly'
+      '06:45 AM - Customer Sarah reported via chat: "Machine completely dead, no lights, nothing"',
+      '06:46 AM - AI Assistant guided power outlet test: "120V confirmed at outlet"',
+      '06:52 AM - AI diagnosed likely fuse issue, created Work Order WO-CM-127',
+      '06:53 AM - Work order assigned to Mike Rodriguez, ETA communicated to customer',
+      '08:15 AM - Mike arrived on-site, confirmed diagnosis with multimeter',
+      '08:20 AM - Discovered blown main fuse F1 (15A slow blow)',
+      '08:25 AM - Investigated root cause: water intrusion from steam line leak',
+      '08:45 AM - Isolated steam system, drained electrical panel',
+      '09:10 AM - Replaced blown fuse and steam line gasket',
+      '09:30 AM - Applied panel sealant and reassembled',
+      '09:45 AM - Power test successful, all systems operational',
+      '10:00 AM - Final testing: brewing, steaming, grinding all confirmed working',
+      '10:15 AM - Customer briefed on repair and prevention, work order closed'
     ],
-    recommendations: 'Schedule quarterly electrical inspection to prevent similar issues',
-    cost: '$45.50',
-    followUpRequired: false
+    recommendations: 'PREVENTIVE: Monthly electrical panel inspection recommended to detect water intrusion early. Install moisture sensor in electrical compartment.',
+    cost: '$78.25 (parts) + $89.50 (labor) = $167.75 total',
+    followUpRequired: true,
+    followUpDate: '2025-08-15'
   },
   {
     id: 'LOG-002',

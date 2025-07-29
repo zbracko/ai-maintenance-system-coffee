@@ -1379,6 +1379,151 @@ const ChatInterface: React.FC = () => {
   // CORE CHAT HANDLERS
   // ================================================================
 
+  /**
+   * Centralized response handler to prevent duplicates
+   */
+  const getUnifiedResponse = (userText: string) => {
+    const userTextLower = userText.toLowerCase();
+    
+    // Update conversation memory first
+    updateConversationMemory(userText, '');
+    
+    // Handle typo demonstration requests
+    if (userText.includes('cofee tastes bd') || userText.includes('coffee tastes bad')) {
+      return {
+        text: "🔍 **Processed:** 'cofee tastes bd' → 'coffee tastes bad'\n\n☕ **Coffee Quality Issue Detected**\n\nLet me help you improve the coffee quality! This is usually related to:\n• Water temperature (should be 195-205°F)\n• Grind size (too fine = bitter, too coarse = weak)\n• Bean freshness (use within 2 weeks of roasting)\n• Extraction time (20-30 seconds for espresso)\n\nWhich machine is having taste issues? I'll guide you through quality diagnostics.",
+        images: [],
+        videos: [],
+        instructions: [],
+        options: []
+      };
+    }
+    
+    if (userText.includes('grindor') || userText.includes('grinder')) {
+      return {
+        text: "🔍 **Processed:** 'grindor makng noise' → 'grinder making noise'\n\n🔊 **Grinder Noise Diagnosis**\n\nUnusual grinder sounds can indicate:\n• Worn burr sets (grinding/scraping sound)\n• Foreign object in grinding chamber (clicking)\n• Motor bearing wear (high-pitched whine)\n• Loose components (rattling)\n\nLet me guide you through grinder troubleshooting. Which machine's grinder is making noise?",
+        images: [],
+        videos: [],
+        instructions: [],
+        options: []
+      };
+    }
+    
+    // Check for machine selection needs
+    const needsMachineSelection = (
+      userTextLower.includes('fix') ||
+      userTextLower.includes('repair') ||
+      userTextLower.includes('issue') ||
+      userTextLower.includes('problem') ||
+      userTextLower.includes('troubleshoot') ||
+      userTextLower.includes('broken') ||
+      userTextLower.includes('not working') ||
+      userTextLower.includes('clean') ||
+      userTextLower.includes('maintenance')
+    ) && !conversationMemory.lastMentionedMachine && !conversationContext.selectedMachine;
+    
+    if (needsMachineSelection) {
+      addMachineSelectionMessage();
+      return null; // Already handled
+    }
+    
+    // Use enhanced response matching with conversation memory
+    const enhancedUserText = userText + (conversationMemory.lastMentionedMachine ? ` (machine: ${conversationMemory.lastMentionedMachine})` : '');
+    let response = findBestResponse(enhancedUserText);
+    
+    // Add conversation context to responses
+    if (response && conversationMemory.lastMentionedMachine) {
+      if (response.text && !response.text.includes('machine')) {
+        response = {
+          ...response,
+          text: `🔄 **Continuing with Machine ${conversationMemory.lastMentionedMachine}**\n\n${response.text}\n\n💡 *I remembered we were discussing Machine ${conversationMemory.lastMentionedMachine} from our previous conversation.*`
+        };
+      }
+    }
+    
+    // Fallback responses if no match found
+    if (!response) {
+      if (userTextLower.includes('hello') || userTextLower.includes('hi') || userTextLower.includes('hey')) {
+        response = {
+          text: `Hi there! 👋 \n\n${conversationMemory.recentTopics.length > 0 ? 
+            `Good to see you again! We were talking about ${conversationMemory.recentTopics[0]}. ` : 
+            'Welcome to the AI Maintenance Assistant! '}\n\nHow can I help you today? I can assist with troubleshooting, maintenance procedures, work orders, or just answer questions about your coffee machines.`,
+          images: [],
+          videos: [],
+          options: ['🔧 Troubleshoot an issue', '🧽 Maintenance guidance', '📋 View work orders', '🔍 Equipment info']
+        };
+      } else if (userTextLower.includes('thank') || userTextLower.includes('thanks')) {
+        response = {
+          text: `You're welcome! 😊 I'm here whenever you need help with your coffee equipment. Is there anything else I can assist you with?`,
+          images: [],
+          videos: [],
+          options: ['🔧 Other issues?', '📋 Check work orders', '🧽 Maintenance tips', '✅ All done for now']
+        };
+      } else {
+        // Natural conversation for general queries
+        response = {
+          text: `I understand you mentioned: "${userText}"\n\nI'm here to help with coffee machine maintenance! ${conversationMemory.lastMentionedMachine ? 
+            `Since we were discussing Machine ${conversationMemory.lastMentionedMachine}, ` : 
+            ''} what would you like to know?\n\n💬 I can help you with:\n• Troubleshooting specific issues\n• Maintenance procedures and schedules\n• Work order management\n• Equipment information and manuals`,
+          images: [],
+          videos: [],
+          options: ['🔧 Troubleshoot issue', '🧽 Maintenance help', '📋 Work orders', '🔍 Equipment info']
+        };
+      }
+    }
+    
+    return response;
+  };
+
+  /**
+   * Handle predefined option selections
+   */
+  const handlePredefinedOptions = (userText: string) => {
+    switch (userText) {
+      case '🔧 Troubleshoot Machine 001':
+        setConversationContext({ selectedMachine: '001', troubleshootingFlow: true });
+        const troubleshootResponse = getDynamicResponse('Machine won\'t start', '001');
+        addBotMessage(troubleshootResponse.text, troubleshootResponse.images, troubleshootResponse.videos, troubleshootResponse.instructions, troubleshootResponse.options);
+        return;
+        
+      case '📋 Show Work Orders':
+        const workOrdersWithButtons = demoWorkOrders.slice(0, 3).map((wo, index) => {
+          const relatedLog = getRelatedLog(wo.id);
+          const hasRelatedLog = relatedLog !== null;
+          
+          return `${index + 1}. **${wo.id}** - ${wo.task}\n   📍 ${wo.location} | ⏰ ${wo.status} | 🔧 ${wo.assignedTo}${hasRelatedLog ? '\n   📝 Related maintenance log available' : ''}`;
+        }).join('\n\n');
+        
+        const workOrderButtons = demoWorkOrders.slice(0, 3).reduce((buttons: string[], wo) => {
+          const relatedLog = getRelatedLog(wo.id);
+          if (relatedLog) {
+            buttons.push(`View Log for ${wo.id}`);
+          }
+          return buttons;
+        }, []);
+        
+        addBotMessage(
+          `📋 **Current Work Orders (${demoWorkOrders.length} active)**\n\n${workOrdersWithButtons}\n\n💬 **Try saying:**\n• "Show details for ${demoWorkOrders[0].id}"\n• "Create new work order for machine 002"\n• "Update work order with completion notes"`,
+          undefined,
+          undefined,
+          undefined,
+          workOrderButtons.length > 0 ? workOrderButtons : undefined
+        );
+        return;
+        
+      case '🧽 Maintenance Guide':
+        addBotMessage(
+          `🧽 **Interactive Maintenance Guide**\n\n**📅 Today's Scheduled Maintenance:**\n• Machine 001: Daily cleaning (Due now)\n• Machine 003: Weekly descaling (Overdue by 2 days)\n• Machine 002: Filter replacement (Due tomorrow)\n\n**🔧 Step-by-Step Procedures:**\n• **Daily Cleaning** - 5 minutes per machine\n• **Weekly Descaling** - 30 minutes deep clean\n• **Monthly Inspection** - Complete system check\n\n💬 **Try asking:**\n• "How do I clean machine 001?"\n• "Show descaling procedure"\n• "What maintenance is overdue?"`
+        );
+        return;
+        
+      case '🔍 Equipment List':
+        const response = generateMachineListResponse();
+        addBotMessage(response.text, response.images, response.videos);
+        return;
+    }
+  };
+
   /** The main "Send" function for new chat messages */
   const handleSend = async (voiceText?: string) => {
     const userText = voiceText ? voiceText.trim() : input.trim();
@@ -1483,17 +1628,14 @@ const ChatInterface: React.FC = () => {
             }
           }
           
+          setLoadingResponse(false);
+          
         } catch (error) {
           console.error('Error getting OpenAI response:', error);
           
-          // Fallback to enhanced demo responses
+          // Single unified fallback response system to prevent duplicates
           setTimeout(() => {
-            const userTextLower = userText.toLowerCase();
-            
-            // Update conversation memory first
-            updateConversationMemory(userText, '');
-            
-            // Check if we're in an active troubleshooting session
+            // Check if we're in an active troubleshooting session first
             if (activeWorkOrder && conversationContext.troubleshootingFlow) {
               const contextualResponse = handleContextualFollowUp(userText, activeWorkOrder);
               if (contextualResponse) {
@@ -1503,209 +1645,28 @@ const ChatInterface: React.FC = () => {
               }
             }
             
-            // Handle quick demo action buttons
+            // Handle predefined option selections
             if (currentOptions.includes(userText)) {
               setCurrentOptions([]);
               setShowIssueTypeButtons(false);
-              
-              // If we're in troubleshooting mode with an active work order, handle contextually
-              if (activeWorkOrder && conversationContext.troubleshootingFlow) {
-                const contextualResponse = handleContextualFollowUp(userText, activeWorkOrder);
-                if (contextualResponse) {
-                  addBotMessage(contextualResponse.text, contextualResponse.images, contextualResponse.videos, contextualResponse.instructions, contextualResponse.options);
-                  setLoadingResponse(false);
-                  return;
-                }
-              }
-              
-              switch (userText) {
-                case '🔧 Troubleshoot Machine 001':
-                  setConversationContext({ selectedMachine: '001', troubleshootingFlow: true });
-                  const troubleshootResponse = getDynamicResponse('Machine won\'t start', '001');
-                  addBotMessage(troubleshootResponse.text, troubleshootResponse.images, troubleshootResponse.videos, troubleshootResponse.instructions, troubleshootResponse.options);
-                  setLoadingResponse(false);
-                  return;
-                  
-                case '📋 Show Work Orders':
-                  const workOrdersWithButtons = demoWorkOrders.slice(0, 3).map((wo, index) => {
-                    const relatedLog = getRelatedLog(wo.id);
-                    const hasRelatedLog = relatedLog !== null;
-                    
-                    return `${index + 1}. **${wo.id}** - ${wo.task}\n   📍 ${wo.location} | ⏰ ${wo.status} | 🔧 ${wo.assignedTo}${hasRelatedLog ? '\n   📝 Related maintenance log available' : ''}`;
-                  }).join('\n\n');
-                  
-                  const workOrderButtons = demoWorkOrders.slice(0, 3).reduce((buttons: string[], wo) => {
-                    const relatedLog = getRelatedLog(wo.id);
-                    if (relatedLog) {
-                      buttons.push(`View Log for ${wo.id}`);
-                    }
-                    return buttons;
-                  }, []);
-                  
-                  addBotMessage(
-                    `📋 **Current Work Orders (${demoWorkOrders.length} active)**\n\n${workOrdersWithButtons}\n\n💬 **Try saying:**\n• "Show details for ${demoWorkOrders[0].id}"\n• "Create new work order for machine 002"\n• "Update work order with completion notes"`,
-                    undefined,
-                    undefined,
-                    undefined,
-                    workOrderButtons.length > 0 ? workOrderButtons : undefined
-                  );
-                  setLoadingResponse(false);
-                  return;
-                  
-                case '🧽 Maintenance Guide':
-                  addBotMessage(
-                    `🧽 **Interactive Maintenance Guide**\n\n**📅 Today's Scheduled Maintenance:**\n• Machine 001: Daily cleaning (Due now)\n• Machine 003: Weekly descaling (Overdue by 2 days)\n• Machine 002: Filter replacement (Due tomorrow)\n\n**🔧 Step-by-Step Procedures:**\n• **Daily Cleaning** - 5 minutes per machine\n• **Weekly Descaling** - 30 minutes deep clean\n• **Monthly Inspection** - Complete system check\n\n💬 **Try asking:**\n• "How do I clean machine 001?"\n• "Show descaling procedure"\n• "What maintenance is overdue?"`
-                  );
-                  setLoadingResponse(false);
-                  return;
-                  
-                case '🔍 Equipment List':
-                  const response = generateMachineListResponse();
-                  addBotMessage(response.text, response.images, response.videos);
-                  setLoadingResponse(false);
-                  return;
-                  
-                case '⚡ Typo Test: "machien broke"':
-                  // Simulate typo processing
-                  addBotMessage("🔍 **Processing:** 'machien broke'\n\n✅ **Understood as:** 'machine broke'\n\n🤖 **AI Recognition Process:**\n• Detected typo in 'machien' → corrected to 'machine'\n• Identified intent: troubleshooting request\n• Context: equipment malfunction\n\n🛠️ **Response:** Which machine is broken? I can help you troubleshoot the issue step by step. Please select the machine or tell me more about what's happening.");
-                  
-                  setTimeout(() => {
-                    addBotMessage(
-                      "This demonstrates my advanced typo recognition system that can understand:\n• Common misspellings\n• Phonetic variations\n• Missing letters\n• Swapped characters\n• Shortened words\n\n💬 **Try more typos like:**\n• 'cofee tastes bd'\n• 'grindor makng strang noise'\n• 'ned halp with maintance'",
-                      [],
-                      [],
-                      [],
-                      ['Try: "cofee tastes bd"', 'Try: "grindor noise"', 'Try: "ned halp"']
-                    );
-                  }, 2000);
-                  setLoadingResponse(false);
-                  return;
-              }
-            }
-            
-            // Handle typo demonstration requests
-            if (userText.includes('cofee tastes bd') || userText.includes('coffee tastes bad')) {
-              addBotMessage("🔍 **Processed:** 'cofee tastes bd' → 'coffee tastes bad'\n\n☕ **Coffee Quality Issue Detected**\n\nLet me help you improve the coffee quality! This is usually related to:\n• Water temperature (should be 195-205°F)\n• Grind size (too fine = bitter, too coarse = weak)\n• Bean freshness (use within 2 weeks of roasting)\n• Extraction time (20-30 seconds for espresso)\n\nWhich machine is having taste issues? I'll guide you through quality diagnostics.");
+              handlePredefinedOptions(userText);
               setLoadingResponse(false);
               return;
             }
             
-            if (userText.includes('grindor') || userText.includes('grinder')) {
-              addBotMessage("🔍 **Processed:** 'grindor makng noise' → 'grinder making noise'\n\n🔊 **Grinder Noise Diagnosis**\n\nUnusual grinder sounds can indicate:\n• Worn burr sets (grinding/scraping sound)\n• Foreign object in grinding chamber (clicking)\n• Motor bearing wear (high-pitched whine)\n• Loose components (rattling)\n\nLet me guide you through grinder troubleshooting. Which machine's grinder is making noise?");
-              setLoadingResponse(false);
-              return;
-            }
+            // Single unified response handler
+            const response = getUnifiedResponse(userText);
             
-            if (userText.includes('ned halp') || userText.includes('need help')) {
-              addBotMessage("🔍 **Processed:** 'ned halp with maintance' → 'need help with maintenance'\n\n🛠️ **Maintenance Assistance Menu**\n\nI can help you with:\n• **Routine Maintenance** - Daily, weekly, monthly procedures\n• **Troubleshooting** - Diagnose and fix issues\n• **Work Orders** - Create and track service requests\n• **Parts & Supplies** - Identify and order components\n• **Safety Procedures** - OSHA-compliant protocols\n\nWhat specific maintenance help do you need today?");
-              setLoadingResponse(false);
-              return;
-            }
-            
-            // Use conversation memory for better context
-            const enhancedUserText = userText + (conversationMemory.lastMentionedMachine ? ` (machine: ${conversationMemory.lastMentionedMachine})` : '');
-            
-            // Check for dynamic conversation triggers with memory context
-            const needsMachineSelection = (
-              userTextLower.includes('fix') ||
-              userTextLower.includes('repair') ||
-              userTextLower.includes('issue') ||
-              userTextLower.includes('problem') ||
-              userTextLower.includes('troubleshoot') ||
-              userTextLower.includes('broken') ||
-              userTextLower.includes('not working') ||
-              userTextLower.includes('help with machine') ||
-              userTextLower.includes('maintenance on') ||
-              userTextLower.includes('whats wrong') ||
-              userTextLower.includes('what wrong') ||
-              userTextLower.includes('weird noise') ||
-              userTextLower.includes('strange noise')
-            ) && !conversationMemory.lastMentionedMachine;
-            
-            if (needsMachineSelection && !conversationContext.selectedMachine) {
-              addMachineSelectionMessage();
-              setLoadingResponse(false);
-              return;
-            }
-            
-            // Use enhanced response matching with conversation memory
-            let response = findBestResponse(enhancedUserText);
-            
-            // Add conversation context to responses
-            if (response && conversationMemory.lastMentionedMachine) {
-              if (response.text && !response.text.includes('machine')) {
-                response = {
-                  ...response,
-                  text: `🔄 **Continuing with Machine ${conversationMemory.lastMentionedMachine}**\n\n${response.text}\n\n💡 *I remembered we were discussing Machine ${conversationMemory.lastMentionedMachine} from our previous conversation.*`
-                };
+            if (response) {
+              addBotMessage(response.text, response.images, response.videos, response.instructions, response.options);
+              if (response.options) {
+                setCurrentOptions(response.options);
               }
             }
             
-            // Fallback responses if no match found with enhanced natural conversation
-            if (!response) {
-              if (userTextLower.includes('hello') || userTextLower.includes('hi') || userTextLower.includes('hey')) {
-                response = {
-                  text: `Hi there! 👋 \n\n${conversationMemory.recentTopics.length > 0 ? 
-                    `Good to see you again! We were talking about ${conversationMemory.recentTopics[0]}. ` : 
-                    'Welcome to the AI Maintenance Assistant! '}\n\nHow can I help you today? I can assist with troubleshooting, maintenance procedures, work orders, or just answer questions about your coffee machines.`,
-                  images: [],
-                  videos: [],
-                  options: ['🔧 Troubleshoot an issue', '🧽 Maintenance guidance', '📋 View work orders', '🔍 Equipment info']
-                };
-              } else if (userTextLower.includes('thank') || userTextLower.includes('thanks')) {
-                response = {
-                  text: `You're welcome! 😊 I'm here whenever you need help with your coffee equipment. Is there anything else I can assist you with?`,
-                  images: [],
-                  videos: [],
-                  options: ['🔧 Other issues?', '📋 Check work orders', '🧽 Maintenance tips', '✅ All done for now']
-                };
-              } else if (userTextLower.includes('how are you') || userTextLower.includes('how do you do')) {
-                response = {
-                  text: `I'm doing great, thanks for asking! 🤖 I'm here and ready to help with all your coffee machine maintenance needs. What's going on with your equipment today?`,
-                  images: [],
-                  videos: [],
-                  options: ['🔧 Need troubleshooting help', '📋 Check work orders', '🧽 Maintenance guidance', '💬 Just chatting']
-                };
-              } else if (userTextLower.includes('bye') || userTextLower.includes('goodbye') || userTextLower.includes('see you')) {
-                response = {
-                  text: `Goodbye! 👋 Take care, and don't hesitate to come back if you need any help with your coffee machines. Have a great day!`,
-                  images: [],
-                  videos: []
-                };
-              } else {
-                // For general conversation, provide natural responses instead of immediately suggesting work orders
-                const intent = detectUserIntent(userText);
-                
-                // Only create work orders for actual maintenance issues, not general questions
-                if (intent === 'troubleshooting' && (userTextLower.includes('broken') || userTextLower.includes('not working') || userTextLower.includes('problem') || userTextLower.includes('issue'))) {
-                  const contextualResponse = generateContextualResponse(userText, intent);
-                  response = {
-                    text: contextualResponse,
-                    images: [],
-                    videos: [],
-                    options: ['🔧 Start troubleshooting', '📋 Create work order', '💬 Tell me more', '📞 Call technician']
-                  };
-                } else {
-                  // Natural conversation for informational queries
-                  response = {
-                    text: `I understand you mentioned: "${userText}"\n\nI'm here to help with coffee machine maintenance! ${conversationMemory.lastMentionedMachine ? 
-                      `Since we were discussing Machine ${conversationMemory.lastMentionedMachine}, ` : 
-                      ''} what would you like to know?\n\n💬 I can help you with:\n• Troubleshooting specific issues\n• Maintenance procedures and schedules\n• Work order management\n• Equipment information and manuals`,
-                    images: [],
-                    videos: [],
-                    options: ['🔧 Troubleshoot issue', '🧽 Maintenance help', '📋 Work orders', '🔍 Equipment info']
-                  };
-                }
-              }
-            }
-            
-            // Send the response with all available media and options
-            addBotMessage(response.text, response.images, response.videos, response.instructions, response.options);
             setLoadingResponse(false);
-          }, demoConfig.aiResponseConfig.responseDelay);
+          }, 1000);
         }
-        
-        setLoadingResponse(false);
       }
     }
   };
