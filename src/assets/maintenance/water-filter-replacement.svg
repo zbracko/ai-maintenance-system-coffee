@@ -1,0 +1,52 @@
+<svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="300" fill="#f8fafc"/>
+  <rect x="50" y="50" width="300" height="200" rx="20" fill="#e2e8f0" stroke="#94a3b8" stroke-width="2"/>
+  
+  <!-- Water filter -->
+  <rect x="150" y="80" width="60" height="100" rx="10" fill="#ffffff" stroke="#94a3b8" stroke-width="2"/>
+  <rect x="160" y="90" width="40" height="80" rx="5" fill="#3b82f6" opacity="0.3"/>
+  
+  <!-- Water droplets -->
+  <circle cx="175" cy="100" r="2" fill="#3b82f6"/>
+  <circle cx="185" cy="110" r="2" fill="#3b82f6"/>
+  <circle cx="165" cy="120" r="2" fill="#3b82f6"/>
+  <circle cx="180" cy="130" r="2" fill="#3b82f6"/>
+  <circle cx="170" cy="140" r="2" fill="#3b82f6"/>
+  <circle cx="190" cy="150" r="2" fill="#3b82f6"/>
+  <circle cx="175" cy="160" r="2" fill="#3b82f6"/>
+  
+  <!-- Filter mesh -->
+  <line x1="160" y1="95" x2="200" y2="95" stroke="#64748b" stroke-width="1"/>
+  <line x1="160" y1="100" x2="200" y2="100" stroke="#64748b" stroke-width="1"/>
+  <line x1="160" y1="105" x2="200" y2="105" stroke="#64748b" stroke-width="1"/>
+  <line x1="160" y1="110" x2="200" y2="110" stroke="#64748b" stroke-width="1"/>
+  <line x1="160" y1="115" x2="200" y2="115" stroke="#64748b" stroke-width="1"/>
+  
+  <!-- Before/After comparison -->
+  <rect x="80" y="200" width="30" height="30" rx="5" fill="#dc2626"/>
+  <text x="95" y="240" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#1e293b">Before</text>
+  
+  <rect x="290" y="200" width="30" height="30" rx="5" fill="#10b981"/>
+  <text x="305" y="240" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#1e293b">After</text>
+  
+  <!-- Arrow between before/after -->
+  <path d="M120 215 L280 215" stroke="#64748b" stroke-width="2" marker-end="url(#arrowhead2)"/>
+  
+  <!-- Arrow marker -->
+  <defs>
+    <marker id="arrowhead2" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#64748b"/>
+    </marker>
+  </defs>
+  
+  <!-- Water quality indicators -->
+  <circle cx="95" cy="215" r="8" fill="#fef2f2"/>
+  <text x="95" y="220" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#dc2626">!</text>
+  
+  <circle cx="305" cy="215" r="8" fill="#f0fdf4"/>
+  <text x="305" y="220" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#10b981">✓</text>
+  
+  <!-- Text -->
+  <text x="200" y="30" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#1e293b">Water Filter Replacement</text>
+  <text x="200" y="280" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#64748b">Maintaining water quality for better coffee</text>
+</svg>

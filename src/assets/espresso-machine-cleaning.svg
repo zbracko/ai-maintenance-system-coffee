@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
+  <!-- Background -->
+  <rect x="0" y="0" width="400" height="300" fill="#f8fafc"/>
+  
+  <!-- Espresso Machine Base -->
+  <rect x="80" y="150" width="240" height="120" fill="#2d3748" rx="10"/>
+  
+  <!-- Machine Front Panel -->
+  <rect x="90" y="160" width="220" height="100" fill="#4a5568" rx="5"/>
+  
+  <!-- Water Tank -->
+  <rect x="60" y="100" width="40" height="80" fill="#90cdf4" rx="5"/>
+  <rect x="62" y="102" width="36" height="60" fill="#bfdbfe" rx="3"/>
+  
+  <!-- Group Head -->
+  <circle cx="200" cy="140" r="25" fill="#718096"/>
+  <circle cx="200" cy="140" r="15" fill="#2d3748"/>
+  
+  <!-- Portafilter -->
+  <rect x="180" y="165" width="40" height="8" fill="#8b4513" rx="4"/>
+  <circle cx="200" cy="175" r="12" fill="#654321"/>
+  
+  <!-- Steam Wand -->
+  <rect x="280" y="120" width="8" height="60" fill="#a0aec0"/>
+  <circle cx="284" cy="115" r="5" fill="#718096"/>
+  
+  <!-- Control Buttons -->
+  <circle cx="130" cy="180" r="8" fill="#48bb78"/>
+  <circle cx="160" cy="180" r="8" fill="#ed8936"/>
+  <circle cx="190" cy="180" r="8" fill="#4299e1"/>
+  
+  <!-- Cleaning Brush -->
+  <rect x="320" y="80" width="4" height="60" fill="#8b4513"/>
+  <ellipse cx="322" cy="75" rx="8" ry="15" fill="#ffd700"/>
+  
+  <!-- Cleaning Cloth -->
+  <rect x="340" y="90" width="30" height="20" fill="#f7fafc" rx="3"/>
+  <path d="M340 95 Q355 85 370 95" stroke="#e2e8f0" stroke-width="1" fill="none"/>
+  
+  <!-- Cleaning Solution Bottle -->
+  <rect x="350" y="130" width="20" height="40" fill="#3182ce" rx="3"/>
+  <rect x="354" y="125" width="12" height="8" fill="#2c5282" rx="2"/>
+  <circle cx="360" cy="121" r="2" fill="#1a365d"/>
+  
+  <!-- Cleaning Instructions Text -->
+  <text x="200" y="30" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#2d3748">
+    Espresso Machine Cleaning
+  </text>
+  <text x="200" y="50" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#4a5568">
+    Daily maintenance procedure
+  </text>
+  
+  <!-- Cleaning Steps Icons -->
+  <!-- Step 1: Water -->
+  <circle cx="50" cy="250" r="15" fill="#3182ce"/>
+  <text x="50" y="255" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="white">1</text>
+  
+  <!-- Step 2: Clean -->
+  <circle cx="120" cy="250" r="15" fill="#38a169"/>
+  <text x="120" y="255" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="white">2</text>
+  
+  <!-- Step 3: Rinse -->
+  <circle cx="190" cy="250" r="15" fill="#d69e2e"/>
+  <text x="190" y="255" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="white">3</text>
+  
+  <!-- Step 4: Dry -->
+  <circle cx="260" cy="250" r="15" fill="#9f7aea"/>
+  <text x="260" y="255" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="white">4</text>
+  
+  <!-- Arrows showing cleaning direction -->
+  <path d="M110 140 L140 140" stroke="#e53e3e" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+  
+  <!-- Arrow marker definition -->
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#e53e3e"/>
+    </marker>
+  </defs>
+</svg>

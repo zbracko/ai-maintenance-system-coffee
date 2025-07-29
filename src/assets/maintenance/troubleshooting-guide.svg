@@ -1,0 +1,47 @@
+<svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="300" fill="#f8fafc"/>
+  <rect x="50" y="50" width="300" height="200" rx="20" fill="#e2e8f0" stroke="#94a3b8" stroke-width="2"/>
+  
+  <!-- Wrench/tool -->
+  <rect x="100" y="120" width="80" height="12" rx="6" fill="#64748b"/>
+  <rect x="90" y="115" width="20" height="22" rx="3" fill="#475569"/>
+  <circle cx="100" cy="126" r="8" fill="#8b5cf6"/>
+  <rect x="170" y="118" width="20" height="16" rx="8" fill="#475569"/>
+  
+  <!-- Screws/bolts -->
+  <circle cx="250" cy="100" r="8" fill="#94a3b8" stroke="#64748b" stroke-width="2"/>
+  <rect x="248" y="98" width="4" height="4" fill="#64748b"/>
+  
+  <circle cx="280" cy="130" r="8" fill="#94a3b8" stroke="#64748b" stroke-width="2"/>
+  <rect x="278" y="128" width="4" height="4" fill="#64748b"/>
+  
+  <circle cx="220" cy="170" r="8" fill="#94a3b8" stroke="#64748b" stroke-width="2"/>
+  <rect x="218" y="168" width="4" height="4" fill="#64748b"/>
+  
+  <!-- Machine components -->
+  <rect x="200" y="80" width="120" height="80" rx="10" fill="#f1f5f9" stroke="#64748b" stroke-width="2"/>
+  <rect x="210" y="90" width="100" height="20" rx="5" fill="#94a3b8"/>
+  <rect x="220" y="120" width="80" height="15" rx="3" fill="#8b5cf6"/>
+  <rect x="230" y="140" width="60" height="10" rx="2" fill="#f59e0b"/>
+  
+  <!-- Diagnostic indicators -->
+  <circle cx="130" cy="200" r="6" fill="#dc2626"/>
+  <text x="130" y="205" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#ffffff">X</text>
+  <text x="130" y="220" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#1e293b">Error</text>
+  
+  <circle cx="200" cy="200" r="6" fill="#f59e0b"/>
+  <text x="200" y="205" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#ffffff">!</text>
+  <text x="200" y="220" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#1e293b">Warning</text>
+  
+  <circle cx="270" cy="200" r="6" fill="#10b981"/>
+  <text x="270" y="205" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#ffffff">✓</text>
+  <text x="270" y="220" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#1e293b">OK</text>
+  
+  <!-- Connection lines -->
+  <path d="M150 126 L200 100" stroke="#64748b" stroke-width="2" stroke-dasharray="3,3"/>
+  <path d="M170 126 L220 140" stroke="#64748b" stroke-width="2" stroke-dasharray="3,3"/>
+  
+  <!-- Text -->
+  <text x="200" y="30" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#1e293b">Troubleshooting Guide</text>
+  <text x="200" y="280" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#64748b">Diagnostic steps and error codes</text>
+</svg>

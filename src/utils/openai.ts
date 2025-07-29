@@ -129,6 +129,84 @@ export interface Message {
   timestamp?: string;
 }
 
+/**
+ * Map of maintenance topics to relevant images
+ */
+const MAINTENANCE_IMAGES = {
+  espresso: '/src/assets/maintenance/espresso-machine-cleaning.svg',
+  cleaning: '/src/assets/maintenance/espresso-machine-cleaning.svg',
+  clean: '/src/assets/maintenance/espresso-machine-cleaning.svg',
+  descaling: '/src/assets/maintenance/espresso-machine-cleaning.svg',
+  grinder: '/src/assets/maintenance/coffee-grinder-operation.svg',
+  grinding: '/src/assets/maintenance/coffee-grinder-operation.svg',
+  grind: '/src/assets/maintenance/coffee-grinder-operation.svg',
+  burr: '/src/assets/maintenance/coffee-grinder-operation.svg',
+  steam: '/src/assets/maintenance/steam-wand-cleaning.svg',
+  wand: '/src/assets/maintenance/steam-wand-cleaning.svg',
+  milk: '/src/assets/maintenance/steam-wand-cleaning.svg',
+  froth: '/src/assets/maintenance/steam-wand-cleaning.svg',
+  filter: '/src/assets/maintenance/water-filter-replacement.svg',
+  water: '/src/assets/maintenance/water-filter-replacement.svg',
+  replacement: '/src/assets/maintenance/water-filter-replacement.svg',
+  quality: '/src/assets/maintenance/water-filter-replacement.svg',
+  troubleshoot: '/src/assets/maintenance/troubleshooting-guide.svg',
+  problem: '/src/assets/maintenance/troubleshooting-guide.svg',
+  error: '/src/assets/maintenance/troubleshooting-guide.svg',
+  issue: '/src/assets/maintenance/troubleshooting-guide.svg',
+  diagnostic: '/src/assets/maintenance/troubleshooting-guide.svg',
+  repair: '/src/assets/maintenance/troubleshooting-guide.svg',
+  fix: '/src/assets/maintenance/troubleshooting-guide.svg'
+};
+
+/**
+ * Detect if images should be included based on user message and context
+ */
+const detectImageNeed = (userMessage: string, context: ConversationContext): boolean => {
+  const message = userMessage.toLowerCase();
+  
+  // Keywords that typically require visual aids
+  const visualKeywords = [
+    'show', 'how to', 'what does', 'look like', 'see', 'visual', 'picture', 
+    'image', 'demonstrate', 'steps', 'guide', 'procedure', 'process'
+  ];
+  
+  // Check for visual request keywords
+  const hasVisualRequest = visualKeywords.some(keyword => message.includes(keyword));
+  
+  // Check for maintenance topics that benefit from images
+  const hasMaintenance = Object.keys(MAINTENANCE_IMAGES).some(topic => message.includes(topic));
+  
+  return hasVisualRequest || hasMaintenance;
+};
+
+/**
+ * Get relevant images based on user message content
+ */
+const getRelevantImages = (userMessage: string, context: ConversationContext): string[] => {
+  const message = userMessage.toLowerCase();
+  const images: string[] = [];
+  const addedImages = new Set<string>(); // Prevent duplicates
+  
+  // Check each maintenance topic
+  Object.entries(MAINTENANCE_IMAGES).forEach(([topic, imagePath]) => {
+    if (message.includes(topic) && !addedImages.has(imagePath)) {
+      images.push(imagePath);
+      addedImages.add(imagePath);
+    }
+  });
+  
+  // If no specific matches but user is asking for help/guidance, show troubleshooting
+  if (images.length === 0) {
+    const helpKeywords = ['help', 'guide', 'how', 'what', 'steps', 'procedure'];
+    if (helpKeywords.some(keyword => message.includes(keyword))) {
+      images.push(MAINTENANCE_IMAGES.troubleshoot);
+    }
+  }
+  
+  // Limit to 3 images max to avoid overwhelming
+  return images.slice(0, 3);
+};
+
 export interface ConversationContext {
   selectedMachine?: string;
   currentIssue?: string;
@@ -357,13 +435,20 @@ export const getOpenAIResponse = async (
       
       console.log('✅ OpenAI response received successfully');
       
-      // Extract images and videos from the response
-      const { cleanText, images } = parseResponseForMedia(aiText);
+      // Intelligent image detection based on user message and AI response
+      const shouldIncludeImages = detectImageNeed(userMessage, context);
+      const contextualImages = shouldIncludeImages ? getRelevantImages(userMessage, context) : [];
+      
+      // Extract additional images and videos from the AI response itself
+      const { cleanText, images: responseImages } = parseResponseForMedia(aiText);
       const videos = extractVideosFromResponse(aiText);
+      
+      // Combine contextual images with any images found in the response
+      const allImages = [...contextualImages, ...responseImages];
       
       return {
         text: cleanText,
-        images: images,
+        images: allImages.length > 0 ? allImages : undefined,
         videos: videos,
         options: [], // No predefined options - pure AI response
         requiresAction: needsUserAction(cleanText, context)
@@ -511,9 +596,13 @@ const generateGreetingResponse = (
     });
   }
   
+  // Include images if user is asking for visual help
+  const shouldIncludeImages = detectImageNeed(userMessage, context);
+  const contextualImages = shouldIncludeImages ? getRelevantImages(userMessage, context) : [];
+  
   return {
     text,
-    images: [],
+    images: contextualImages,
     videos: [],
     options: [],
     requiresAction: false
@@ -557,7 +646,7 @@ const generateMachineSelectionResponse = (message: string): ContextualResponse =
   
   return {
     text,
-    images: [demoConfig.placeholderMedia.images.diagnostic],
+    images: [MAINTENANCE_IMAGES.troubleshoot],
     videos: [],
     options: [],
     requiresAction: true
@@ -748,9 +837,13 @@ const generateWorkOrderResponse = (message: string, context: ConversationContext
     text += `What would you like me to help you with regarding work orders?`;
   }
   
+  // Include images if applicable for work order context
+  const shouldIncludeImages = detectImageNeed(message, context);
+  const contextualImages = shouldIncludeImages ? getRelevantImages(message, context) : [];
+  
   return {
     text,
-    images: [],
+    images: contextualImages,
     videos: [],
     options: [],
     requiresAction: true
@@ -867,9 +960,14 @@ const generatePartsResponse = (
     text += `What specific parts assistance do you need?`;
   }
   
+  // Include contextual images based on the parts request
+  const shouldIncludeImages = detectImageNeed(message, context);
+  const contextualImages = shouldIncludeImages ? getRelevantImages(message, context) : [];
+  const fallbackImages = contextualImages.length > 0 ? contextualImages : [demoConfig.placeholderMedia.images.parts];
+  
   return {
     text,
-    images: [demoConfig.placeholderMedia.images.parts],
+    images: fallbackImages,
     videos: machine ? [demoConfig.placeholderMedia.videos.parts] : [],
     options: [],
     requiresAction: true
@@ -909,9 +1007,14 @@ const generateDocumentationResponse = (message: string, context: ConversationCon
   
   const mediaInfo = getDocumentationMedia(docType);
   
+  // Include additional contextual images based on user message
+  const shouldIncludeImages = detectImageNeed(message, context);
+  const contextualImages = shouldIncludeImages ? getRelevantImages(message, context) : [];
+  const combinedImages = [...new Set([...mediaInfo.images, ...contextualImages])]; // Remove duplicates
+  
   return {
     text,
-    images: mediaInfo.images,
+    images: combinedImages,
     videos: mediaInfo.videos,
     options: [],
     requiresAction: true
@@ -945,9 +1048,13 @@ const generateDefaultResponse = (
   text += `• **Documentation** and technical manuals\n\n`;
   text += `What would you like help with?`;
   
+  // Include images if applicable for default response
+  const shouldIncludeImages = detectImageNeed(message, context);
+  const contextualImages = shouldIncludeImages ? getRelevantImages(message, context) : [];
+  
   return {
     text,
-    images: [],
+    images: contextualImages,
     videos: [],
     options: [],
     requiresAction: false
@@ -1786,22 +1893,52 @@ Would you like me to create a customized schedule for your specific usage patter
  * Get maintenance media
  */
 const getMaintenanceMedia = (maintenanceType: string): { images: string[], videos: string[] } => {
+  // Map maintenance types to relevant images from MAINTENANCE_IMAGES
+  const getMaintenanceTypeImages = (type: string): string[] => {
+    const typeLower = type.toLowerCase();
+    const images: string[] = [];
+    
+    // Check for specific maintenance types in MAINTENANCE_IMAGES keys
+    Object.entries(MAINTENANCE_IMAGES).forEach(([topic, imagePath]) => {
+      if (typeLower.includes(topic) || topic.includes(typeLower)) {
+        images.push(imagePath);
+      }
+    });
+    
+    // Default fallbacks for common maintenance types
+    if (images.length === 0) {
+      if (typeLower.includes('clean')) {
+        images.push(MAINTENANCE_IMAGES['steam wand']);
+        images.push(MAINTENANCE_IMAGES['espresso machine']);
+      } else if (typeLower.includes('grind') || typeLower.includes('coffee')) {
+        images.push(MAINTENANCE_IMAGES['grinder']);
+      }
+    }
+    
+    return images;
+  };
+  
+  const relevantImages = getMaintenanceTypeImages(maintenanceType);
+  
   const mediaMap: Record<string, { images: string[], videos: string[] }> = {
     "cleaning": {
-      images: [demoConfig.placeholderMedia.images.cleaning],
+      images: relevantImages.length > 0 ? relevantImages : [demoConfig.placeholderMedia.images.cleaning],
       videos: [demoConfig.placeholderMedia.videos.cleaning]
     },
     "descaling": {
-      images: [demoConfig.placeholderMedia.images.maintenance],
+      images: relevantImages.length > 0 ? relevantImages : [demoConfig.placeholderMedia.images.maintenance],
       videos: [demoConfig.placeholderMedia.videos.maintenance]
     },
     "preventive": {
-      images: [demoConfig.placeholderMedia.images.maintenance],
+      images: relevantImages.length > 0 ? relevantImages : [demoConfig.placeholderMedia.images.maintenance],
       videos: [demoConfig.placeholderMedia.videos.overview]
     }
   };
   
-  return mediaMap[maintenanceType] || { images: [], videos: [] };
+  return mediaMap[maintenanceType] || { 
+    images: relevantImages.length > 0 ? relevantImages : [], 
+    videos: [] 
+  };
 };
 
 /**

@@ -2780,35 +2780,80 @@ Comments: ${wo.comments}`;
                             <Slider {...sliderSettings} ref={sliderRef}>
                               {msg.images.map((img, idx) => (
                                 <Box key={idx} textAlign="center">
-                                  {/* Placeholder image for demo */}
-                                  <Box
-                                    sx={{
-                                      width: '100%',
-                                      height: '300px',
-                                      backgroundColor: '#f1f5f9',
-                                      border: '2px dashed #cbd5e1',
-                                      borderRadius: '8px',
-                                      display: 'flex',
-                                      flexDirection: 'column',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      cursor: 'pointer',
-                                      transition: 'all 0.3s ease',
-                                      '&:hover': {
-                                        backgroundColor: '#e2e8f0',
-                                        borderColor: '#94a3b8'
-                                      }
-                                    }}
-                                    onClick={() => handleImageClick(img)}
-                                  >
-                                    <PhotoCameraIcon sx={{ fontSize: 48, color: '#64748b', mb: 1 }} />
-                                    <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 500 }}>
-                                      📸 Demo Image Placeholder
-                                    </Typography>
-                                    <Typography variant="caption" color="textSecondary" sx={{ mt: 0.5 }}>
-                                      {img}
-                                    </Typography>
-                                  </Box>
+                                  {/* Display actual images or fallback to placeholder */}
+                                  {img.startsWith('/src/assets/') || img.startsWith('src/assets/') ? (
+                                    <Box
+                                      component="img"
+                                      src={img.startsWith('/') ? img : `/${img}`}
+                                      alt={`Maintenance Image ${idx + 1}`}
+                                      sx={{
+                                        width: '100%',
+                                        height: '300px',
+                                        objectFit: 'contain',
+                                        backgroundColor: '#f8fafc',
+                                        border: '1px solid #e2e8f0',
+                                        borderRadius: '8px',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.3s ease',
+                                        '&:hover': {
+                                          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                                          transform: 'scale(1.02)'
+                                        }
+                                      }}
+                                      onClick={() => handleImageClick(img)}
+                                      onError={(e) => {
+                                        // Fallback to placeholder if image fails to load
+                                        e.currentTarget.style.display = 'none';
+                                        e.currentTarget.parentElement.innerHTML = `
+                                          <div style="
+                                            width: 100%;
+                                            height: 300px;
+                                            background-color: #f1f5f9;
+                                            border: 2px dashed #cbd5e1;
+                                            border-radius: 8px;
+                                            display: flex;
+                                            flex-direction: column;
+                                            align-items: center;
+                                            justify-content: center;
+                                            cursor: pointer;
+                                          ">
+                                            <span style="font-size: 48px; color: #64748b; margin-bottom: 8px;">📸</span>
+                                            <span style="font-size: 14px; color: #64748b; font-weight: 500;">Image not available</span>
+                                            <span style="font-size: 12px; color: #64748b; margin-top: 4px;">${img}</span>
+                                          </div>
+                                        `;
+                                      }}
+                                    />
+                                  ) : (
+                                    <Box
+                                      sx={{
+                                        width: '100%',
+                                        height: '300px',
+                                        backgroundColor: '#f1f5f9',
+                                        border: '2px dashed #cbd5e1',
+                                        borderRadius: '8px',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.3s ease',
+                                        '&:hover': {
+                                          backgroundColor: '#e2e8f0',
+                                          borderColor: '#94a3b8'
+                                        }
+                                      }}
+                                      onClick={() => handleImageClick(img)}
+                                    >
+                                      <PhotoCameraIcon sx={{ fontSize: 48, color: '#64748b', mb: 1 }} />
+                                      <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 500 }}>
+                                        📸 Demo Image Placeholder
+                                      </Typography>
+                                      <Typography variant="caption" color="textSecondary" sx={{ mt: 0.5 }}>
+                                        {img}
+                                      </Typography>
+                                    </Box>
+                                  )}
                                 </Box>
                               ))}
                             </Slider>

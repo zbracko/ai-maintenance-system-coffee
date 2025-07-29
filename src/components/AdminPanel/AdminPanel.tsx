@@ -27,9 +27,16 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  Tooltip
+  Tooltip,
+  IconButton,
+  Switch,
+  FormControlLabel
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
+import VideoCallIcon from '@mui/icons-material/VideoCall';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import { QRCodeCanvas } from 'qrcode.react';
 import { useTranslation } from 'react-i18next';
 import { API_BASE_URL, S3_BASE_URL } from '../../config';
@@ -314,6 +321,12 @@ const MainPanel: React.FC = () => {
   const [fileChunks, setFileChunks] = useState<string[]>([]);
   const [editableChunks, setEditableChunks] = useState<string[]>([]);
   const [viewChunks, setViewChunks] = useState<boolean>(false);
+
+  // Image and media management
+  const [showImagePreview, setShowImagePreview] = useState<boolean>(true);
+  const [imageInsertDialog, setImageInsertDialog] = useState<boolean>(false);
+  const [videoInsertDialog, setVideoInsertDialog] = useState<boolean>(false);
+  const [insertPosition, setInsertPosition] = useState<number>(0);
 
   // File uploads
   const [uploadFile, setUploadFile] = useState<File | null>(null);
@@ -1082,6 +1095,95 @@ See main parts catalog for complete listings and pricing.
     setFileContent(prev => prev.substring(0, start) + snippet + prev.substring(end));
   };
 
+  /** Insert image anchor link */
+  const handleInsertImage = (imagePath: string, altText: string = '') => {
+    const snippet = `![${altText || 'Image'}](${imagePath})`;
+    insertIntoText(snippet);
+    setImageInsertDialog(false);
+  };
+
+  /** Insert video anchor link */
+  const handleInsertVideo = (videoPath: string, title: string = '') => {
+    const snippet = `[🎥 ${title || 'Video'}](${videoPath})`;
+    insertIntoText(snippet);
+    setVideoInsertDialog(false);
+  };
+
+  /** Open image insert dialog */
+  const openImageInsertDialog = () => {
+    if (textAreaRef.current) {
+      setInsertPosition(textAreaRef.current.selectionStart);
+    }
+    setImageInsertDialog(true);
+  };
+
+  /** Open video insert dialog */
+  const openVideoInsertDialog = () => {
+    if (textAreaRef.current) {
+      setInsertPosition(textAreaRef.current.selectionStart);
+    }
+    setVideoInsertDialog(true);
+  };
+
+  /** Parse and render text with embedded images */
+  const renderTextWithImages = (text: string) => {
+    if (!showImagePreview) {
+      return <Typography sx={{ whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>{text}</Typography>;
+    }
+
+    const parts = text.split(/(\!\[.*?\]\(.*?\))/g);
+    return (
+      <Box>
+        {parts.map((part, index) => {
+          const imageMatch = part.match(/\!\[(.*?)\]\((.*?)\)/);
+          if (imageMatch) {
+            const [, altText, imagePath] = imageMatch;
+            const fullImagePath = imagePath.startsWith('/') ? imagePath : `/src/assets/${imagePath}`;
+            return (
+              <Box key={index} sx={{ my: 2, textAlign: 'center' }}>
+                <Box
+                  component="img"
+                  src={fullImagePath}
+                  alt={altText}
+                  sx={{
+                    maxWidth: '100%',
+                    maxHeight: '300px',
+                    objectFit: 'contain',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '8px',
+                    cursor: 'pointer'
+                  }}
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.parentElement.innerHTML = `
+                      <div style="
+                        padding: 20px;
+                        border: 2px dashed #cbd5e1;
+                        border-radius: 8px;
+                        text-align: center;
+                        color: #64748b;
+                      ">
+                        📸 Image: ${altText || imagePath}
+                      </div>
+                    `;
+                  }}
+                />
+                <Typography variant="caption" sx={{ display: 'block', mt: 1, color: 'text.secondary' }}>
+                  {altText}
+                </Typography>
+              </Box>
+            );
+          }
+          return (
+            <Typography key={index} sx={{ whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
+              {part}
+            </Typography>
+          );
+        })}
+      </Box>
+    );
+  };
+
   /** Handle resource attachment */
   const handleAttachResource = (resource: ResourceItem) => {
     const resourceUrl = resource.path?.startsWith('http')
@@ -1766,6 +1868,37 @@ See main parts catalog for complete listings and pricing.
                 )}
                 {selectedResource.type === 'file' && selectedResource.name?.endsWith('.txt') && (
                   <Box>
+                    {/* Image Preview Toggle and Insert Controls */}
+                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 2 }}>
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={showImagePreview}
+                            onChange={(e) => setShowImagePreview(e.target.checked)}
+                            size="small"
+                          />
+                        }
+                        label="Show Image Preview"
+                      />
+                      <IconButton
+                        onClick={openImageInsertDialog}
+                        color="primary"
+                        title="Insert Image"
+                        size="small"
+                      >
+                        <PhotoCameraIcon />
+                      </IconButton>
+                      <IconButton
+                        onClick={openVideoInsertDialog}
+                        color="secondary"
+                        title="Insert Video"
+                        size="small"
+                      >
+                        <VideoCallIcon />
+                      </IconButton>
+                    </Box>
+
+                    {/* Text Editor */}
                     <TextField
                       multiline
                       fullWidth
@@ -1775,7 +1908,26 @@ See main parts catalog for complete listings and pricing.
                       inputRef={textAreaRef}
                       variant="outlined"
                       sx={{ mb: 2 }}
+                      placeholder="Enter manual content... Use ![alt text](image-path) for images and [🎥 title](video-path) for videos"
                     />
+
+                    {/* Image Preview Panel */}
+                    {showImagePreview && fileContent && (
+                      <Box sx={{
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '8px',
+                        p: 2,
+                        mb: 2,
+                        backgroundColor: '#f8fafc',
+                        maxHeight: '400px',
+                        overflowY: 'auto'
+                      }}>
+                        <Typography variant="subtitle2" sx={{ mb: 1, color: 'rgba(30, 41, 59, 0.8)', fontWeight: 600 }}>
+                          📖 Preview with Images
+                        </Typography>
+                        {renderTextWithImages(fileContent)}
+                      </Box>
+                    )}
                     <Typography variant="subtitle2" sx={{ color: 'rgba(30, 41, 59, 0.8)', fontWeight: 600 }}>
                       Add New Attachment for This Paragraph
                     </Typography>
@@ -2359,7 +2511,21 @@ See main parts catalog for complete listings and pricing.
 
       {/* Chunk viewer dialog with editable chunks */}
       <Dialog open={viewChunks} onClose={() => setViewChunks(false)} maxWidth="lg" fullWidth>
-        <DialogTitle>View & Edit Chunks</DialogTitle>
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            View & Edit Chunks
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={showImagePreview}
+                  onChange={(e) => setShowImagePreview(e.target.checked)}
+                  size="small"
+                />
+              }
+              label="Preview Images"
+            />
+          </Box>
+        </DialogTitle>
         <DialogContent dividers>
           {editableChunks.length === 0 && (
             <Typography variant="body2" sx={{ color: 'rgba(30, 41, 59, 0.7)' }}>
@@ -2367,10 +2533,42 @@ See main parts catalog for complete listings and pricing.
             </Typography>
           )}
           {editableChunks.map((chunk, idx) => (
-            <Box key={idx} mb={2}>
-              <Typography variant="subtitle2" sx={{ color: 'rgba(30, 41, 59, 0.8)', fontWeight: 600 }}>
-                Chunk {idx + 1}
-              </Typography>
+            <Box key={idx} mb={3}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                <Typography variant="subtitle2" sx={{ color: 'rgba(30, 41, 59, 0.8)', fontWeight: 600 }}>
+                  Chunk {idx + 1}
+                </Typography>
+                <IconButton
+                  size="small"
+                  onClick={() => {
+                    const imagePath = prompt('Enter image path (e.g., espresso-machine-cleaning.svg):');
+                    if (imagePath) {
+                      const altText = prompt('Enter alt text for the image:') || 'Image';
+                      const newChunks = [...editableChunks];
+                      newChunks[idx] += `\n\n![${altText}](${imagePath})`;
+                      setEditableChunks(newChunks);
+                    }
+                  }}
+                  title="Insert Image"
+                >
+                  <PhotoCameraIcon />
+                </IconButton>
+                <IconButton
+                  size="small"
+                  onClick={() => {
+                    const videoPath = prompt('Enter video path or URL:');
+                    if (videoPath) {
+                      const title = prompt('Enter video title:') || 'Video';
+                      const newChunks = [...editableChunks];
+                      newChunks[idx] += `\n\n[🎥 ${title}](${videoPath})`;
+                      setEditableChunks(newChunks);
+                    }
+                  }}
+                  title="Insert Video Link"
+                >
+                  <VideoCallIcon />
+                </IconButton>
+              </Box>
               <TextField
                 multiline
                 fullWidth
@@ -2381,7 +2579,22 @@ See main parts catalog for complete listings and pricing.
                   newChunks[idx] = e.target.value;
                   setEditableChunks(newChunks);
                 }}
+                rows={4}
               />
+              {showImagePreview && chunk && (
+                <Box sx={{
+                  mt: 2,
+                  p: 2,
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  backgroundColor: '#f8fafc'
+                }}>
+                  <Typography variant="caption" sx={{ fontWeight: 600, color: 'rgba(30, 41, 59, 0.8)' }}>
+                    Preview:
+                  </Typography>
+                  {renderTextWithImages(chunk)}
+                </Box>
+              )}
             </Box>
           ))}
         </DialogContent>
@@ -2390,6 +2603,83 @@ See main parts catalog for complete listings and pricing.
           <Button variant="contained" onClick={() => { setFileChunks(editableChunks); setViewChunks(false); }}>
             Save Changes
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Image Insert Dialog */}
+      <Dialog open={imageInsertDialog} onClose={() => setImageInsertDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Insert Image</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ mb: 2, color: 'rgba(30, 41, 59, 0.7)' }}>
+            Insert an image reference into your manual text.
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 2 }}>
+            {[
+              'espresso-machine-cleaning.svg',
+              'coffee-grinder-operation.svg', 
+              'steam-wand-cleaning.svg',
+              'water-filter-replacement.svg',
+              'troubleshooting-guide.svg'
+            ].map((imageName) => (
+              <Button
+                key={imageName}
+                variant="outlined"
+                size="small"
+                onClick={() => handleInsertImage(`/src/assets/${imageName}`, imageName.replace('.svg', '').replace(/-/g, ' '))}
+                sx={{ textTransform: 'none' }}
+              >
+                {imageName.replace('.svg', '').replace(/-/g, ' ')}
+              </Button>
+            ))}
+          </Box>
+          <TextField
+            fullWidth
+            label="Custom Image Path"
+            placeholder="e.g., /src/assets/my-image.jpg"
+            sx={{ mb: 2 }}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                const target = e.target as HTMLInputElement;
+                const altText = prompt('Enter alt text for the image:') || 'Image';
+                handleInsertImage(target.value, altText);
+              }
+            }}
+          />
+          <Typography variant="caption" sx={{ color: 'rgba(30, 41, 59, 0.6)' }}>
+            Click a predefined image or enter a custom path and press Enter
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setImageInsertDialog(false)}>Cancel</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Video Insert Dialog */}
+      <Dialog open={videoInsertDialog} onClose={() => setVideoInsertDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Insert Video Link</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ mb: 2, color: 'rgba(30, 41, 59, 0.7)' }}>
+            Insert a video reference into your manual text.
+          </Typography>
+          <TextField
+            fullWidth
+            label="Video URL or Path"
+            placeholder="e.g., https://example.com/video.mp4 or /videos/maintenance.mp4"
+            sx={{ mb: 2 }}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                const target = e.target as HTMLInputElement;
+                const title = prompt('Enter video title:') || 'Video';
+                handleInsertVideo(target.value, title);
+              }
+            }}
+          />
+          <Typography variant="caption" sx={{ color: 'rgba(30, 41, 59, 0.6)' }}>
+            Enter video URL or path and press Enter
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setVideoInsertDialog(false)}>Cancel</Button>
         </DialogActions>
       </Dialog>
     </>
