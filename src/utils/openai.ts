@@ -5,7 +5,7 @@
  * incorporating conversation history, machine data, work orders, and maintenance logs.
  */
 
-import { demoWorkOrders, demoPastLogs, demoMachineOptions } from '../data/demoData';
+import { demoWorkOrders, demoPastLogs, demoMachineOptions, demoChatResponses } from '../data/demoData';
 import { demoConfig } from '../config/demoConfig';
 import { configService } from '../services/configService';
 
@@ -141,6 +141,8 @@ const MAINTENANCE_IMAGES = {
   grinding: '/assets/coffee-grinder-operation.svg',
   grind: '/assets/coffee-grinder-operation.svg',
   burr: '/assets/coffee-grinder-operation.svg',
+  'grinder cleaning': '/assets/coffee-grinder-operation.svg',
+  'clean grinder': '/assets/coffee-grinder-operation.svg',
   steam: '/assets/steam-wand-cleaning.svg',
   wand: '/assets/steam-wand-cleaning.svg',
   milk: '/assets/steam-wand-cleaning.svg',
@@ -155,7 +157,26 @@ const MAINTENANCE_IMAGES = {
   issue: '/assets/troubleshooting-guide.svg',
   diagnostic: '/assets/troubleshooting-guide.svg',
   repair: '/assets/troubleshooting-guide.svg',
-  fix: '/assets/troubleshooting-guide.svg'
+  fix: '/assets/troubleshooting-guide.svg',
+  // NEW CONTEXTUAL IMAGES FOR SPECIFIC PROBLEMS
+  stuck: '/assets/filter-stuck-removal.svg',
+  'filter stuck': '/assets/filter-stuck-removal.svg',
+  'filter is stuck': '/assets/filter-stuck-removal.svg',
+  jammed: '/assets/grinder-jam-clearing.svg',
+  jam: '/assets/grinder-jam-clearing.svg',
+  'grinder jam': '/assets/grinder-jam-clearing.svg',
+  'grinder jammed': '/assets/grinder-jam-clearing.svg',
+  blocked: '/assets/steam-wand-blockage.svg',
+  'steam blocked': '/assets/steam-wand-blockage.svg',
+  'wand blocked': '/assets/steam-wand-blockage.svg',
+  'no steam': '/assets/steam-wand-blockage.svg',
+  bitter: '/assets/brewing-chamber-cleaning.svg',
+  'coffee bitter': '/assets/brewing-chamber-cleaning.svg',
+  'bitter coffee': '/assets/brewing-chamber-cleaning.svg',
+  'brewing chamber': '/assets/brewing-chamber-cleaning.svg',
+  noise: '/assets/grinder-jam-clearing.svg',
+  'grinder noise': '/assets/grinder-jam-clearing.svg',
+  'making noise': '/assets/grinder-jam-clearing.svg'
 };
 
 /**
@@ -192,6 +213,93 @@ const MULTI_STEP_PROCEDURES = {
       '/assets/coffee-grinder-operation.svg'
     ],
     videos: []
+  },
+  // NEW CONTEXTUAL PROBLEM-SPECIFIC PROCEDURES
+  'filter stuck': {
+    images: [
+      '/assets/filter-stuck-removal.svg',
+      '/assets/water-filter-replacement.svg'
+    ],
+    videos: []
+  },
+  'filter is stuck': {
+    images: [
+      '/assets/filter-stuck-removal.svg',
+      '/assets/water-filter-replacement.svg'
+    ],
+    videos: []
+  },
+  'grinder jammed': {
+    images: [
+      '/assets/grinder-jam-clearing.svg',
+      '/assets/coffee-grinder-operation.svg'
+    ],
+    videos: ['/assets/Cleaning_Grinder.mp4']
+  },
+  'grinder jam': {
+    images: [
+      '/assets/grinder-jam-clearing.svg',
+      '/assets/coffee-grinder-operation.svg'
+    ],
+    videos: ['/assets/Cleaning_Grinder.mp4']
+  },
+  'grinder cleaning': {
+    images: [
+      '/assets/coffee-grinder-operation.svg',
+      '/assets/grinder-jam-clearing.svg'
+    ],
+    videos: ['/assets/Cleaning_Grinder.mp4']
+  },
+  'clean grinder': {
+    images: [
+      '/assets/coffee-grinder-operation.svg',
+      '/assets/grinder-jam-clearing.svg'
+    ],
+    videos: ['/assets/Cleaning_Grinder.mp4']
+  },
+  'steam wand blocked': {
+    images: [
+      '/assets/steam-wand-blockage.svg',
+      '/assets/steam-wand-cleaning.svg'
+    ],
+    videos: []
+  },
+  'steam blocked': {
+    images: [
+      '/assets/steam-wand-blockage.svg',
+      '/assets/steam-wand-cleaning.svg'
+    ],
+    videos: []
+  },
+  'coffee tastes bitter': {
+    images: [
+      '/assets/brewing-chamber-cleaning.svg',
+      '/assets/espresso-machine-cleaning.svg'
+    ],
+    videos: []
+  },
+  'bitter coffee': {
+    images: [
+      '/assets/brewing-chamber-cleaning.svg',
+      '/assets/espresso-machine-cleaning.svg'
+    ],
+    videos: []
+  },
+  'grinder making noise': {
+    images: [
+      '/assets/grinder-jam-clearing.svg',
+      '/assets/coffee-grinder-operation.svg',
+      '/assets/troubleshooting-guide.svg'
+    ],
+    videos: []
+  },
+  'grinder noise': {
+    images: [
+      '/assets/grinder-jam-clearing.svg',
+      '/assets/coffee-grinder-operation.svg',
+      '/assets/troubleshooting-guide.svg'
+    ],
+    videos: []
   }
 };
 
@@ -213,46 +321,90 @@ const detectImageNeed = (userMessage: string, context: ConversationContext): boo
   // Check for maintenance topics that benefit from images
   const hasMaintenance = Object.keys(MAINTENANCE_IMAGES).some(topic => message.includes(topic));
   
-  return hasVisualRequest || hasMaintenance;
+  // Check for multi-step procedures
+  const hasMultiStepProcedure = Object.keys(MULTI_STEP_PROCEDURES).some(procedure => message.includes(procedure));
+  
+  return hasVisualRequest || hasMaintenance || hasMultiStepProcedure;
 };
 
 /**
- * Get relevant images based on user message content
+ * Get relevant images based on user message content with enhanced contextual detection
  */
 const getRelevantImages = (userMessage: string, context: ConversationContext): string[] => {
   const message = userMessage.toLowerCase();
   let images: string[] = [];
   const addedImages = new Set<string>(); // Prevent duplicates
   
-  // First check for multi-step procedures
-  for (const [procedure, config] of Object.entries(MULTI_STEP_PROCEDURES)) {
-    if (message.includes(procedure)) {
-      config.images.forEach(img => {
-        if (!addedImages.has(img)) {
-          images.push(img);
-          addedImages.add(img);
+  console.log('🔍 Image detection for message:', message);
+  
+  // PRIORITY 1: Check for specific problem scenarios first (most specific)
+  const problemScenarios = [
+    { keywords: ['filter stuck', 'filter is stuck', 'stuck filter'], image: '/assets/filter-stuck-removal.svg' },
+    { keywords: ['grinder jammed', 'grinder jam', 'jam', 'jammed'], image: '/assets/grinder-jam-clearing.svg' },
+    { keywords: ['steam blocked', 'wand blocked', 'no steam', 'steam wand blocked'], image: '/assets/steam-wand-blockage.svg' },
+    { keywords: ['coffee bitter', 'bitter coffee', 'bitter taste', 'bitter'], image: '/assets/brewing-chamber-cleaning.svg' },
+    { keywords: ['grinder noise', 'making noise', 'grinder making noise', 'noise'], image: '/assets/grinder-jam-clearing.svg' }
+  ];
+  
+  for (const scenario of problemScenarios) {
+    if (scenario.keywords.some(keyword => message.includes(keyword))) {
+      if (!addedImages.has(scenario.image)) {
+        images.push(scenario.image);
+        addedImages.add(scenario.image);
+        console.log(`   ✅ Added problem-specific image: ${scenario.image}`);
+        // For specific problems, also add the general maintenance image
+        const generalImage = scenario.image.includes('filter') ? '/assets/water-filter-replacement.svg' :
+                             scenario.image.includes('grinder') ? '/assets/coffee-grinder-operation.svg' :
+                             scenario.image.includes('steam') ? '/assets/steam-wand-cleaning.svg' :
+                             scenario.image.includes('brewing') ? '/assets/espresso-machine-cleaning.svg' : null;
+        if (generalImage && !addedImages.has(generalImage)) {
+          images.push(generalImage);
+          addedImages.add(generalImage);
+          console.log(`   ✅ Added supporting image: ${generalImage}`);
         }
-      });
-      // If we found a multi-step procedure, return its images (don't add more)
-      return images;
+        break; // Found specific problem, prioritize this over general topics
+      }
     }
   }
   
-  // If no multi-step procedure found, check individual maintenance topics
-  Object.entries(MAINTENANCE_IMAGES).forEach(([topic, imagePath]) => {
-    if (message.includes(topic) && !addedImages.has(imagePath)) {
-      images.push(imagePath);
-      addedImages.add(imagePath);
-    }
-  });
-  
-  // If no specific matches but user is asking for help/guidance, show troubleshooting
+  // PRIORITY 2: If no specific problem found, check for multi-step procedures
   if (images.length === 0) {
-    const helpKeywords = ['help', 'guide', 'how', 'what', 'steps', 'procedure'];
+    for (const [procedure, config] of Object.entries(MULTI_STEP_PROCEDURES)) {
+      if (message.includes(procedure)) {
+        config.images.forEach(img => {
+          if (!addedImages.has(img)) {
+            images.push(img);
+            addedImages.add(img);
+            console.log(`   ✅ Added procedure image: ${img}`);
+          }
+        });
+        // If we found a multi-step procedure, return its images (don't add more)
+        return images;
+      }
+    }
+  }
+  
+  // PRIORITY 3: If no multi-step procedure found, check individual maintenance topics
+  if (images.length === 0) {
+    Object.entries(MAINTENANCE_IMAGES).forEach(([topic, imagePath]) => {
+      if (message.includes(topic) && !addedImages.has(imagePath)) {
+        images.push(imagePath);
+        addedImages.add(imagePath);
+        console.log(`   ✅ Added topic image: ${imagePath} (topic: ${topic})`);
+      }
+    });
+  }
+  
+  // PRIORITY 4: If no specific matches but user is asking for help/guidance, show troubleshooting
+  if (images.length === 0) {
+    const helpKeywords = ['help', 'guide', 'how', 'what', 'steps', 'procedure', 'show me', 'need help'];
     if (helpKeywords.some(keyword => message.includes(keyword))) {
       images.push(MAINTENANCE_IMAGES.troubleshoot);
+      console.log(`   ✅ Added default help image: ${MAINTENANCE_IMAGES.troubleshoot}`);
     }
   }
+  
+  console.log(`   📊 Final images (${images.length}): ${images.join(', ')}`);
   
   // Limit to 3 images max to avoid overwhelming
   return images.slice(0, 3);
@@ -263,18 +415,44 @@ const getRelevantImages = (userMessage: string, context: ConversationContext): s
  */
 const getRelevantVideos = (userMessage: string, context: ConversationContext): string[] => {
   const message = userMessage.toLowerCase();
+  // Simple typo correction for common filter-related words
+  const correctedMessage = message
+    .replace(/reapcle/g, 'replace')
+    .replace(/filtr/g, 'filter')
+    .replace(/wate/g, 'water');
   const videos: string[] = [];
   
   // Check for multi-step procedures that have videos
   for (const [procedure, config] of Object.entries(MULTI_STEP_PROCEDURES)) {
-    if (message.includes(procedure) && config.videos.length > 0) {
+    if ((message.includes(procedure) || correctedMessage.includes(procedure)) && config.videos.length > 0) {
       videos.push(...config.videos);
-      // Return first matching procedure's videos
-      return videos;
     }
   }
   
-  return videos;
+  // Also check demo chat responses for videos
+  for (const [key, response] of Object.entries(demoChatResponses)) {
+    const keyLower = key.toLowerCase();
+    if (message.includes(keyLower) || correctedMessage.includes(keyLower)) {
+      const typedResponse = response as any;
+      if (typedResponse.videos && typedResponse.videos.length > 0) {
+        videos.push(...typedResponse.videos);
+      }
+    }
+  }
+  
+  // Additional keyword matching for common terms
+  const filterKeywords = ['filter', 'replacement', 'replace', 'water', 'cartridge'];
+  const hasFilterKeyword = filterKeywords.some(keyword => 
+    message.includes(keyword) || correctedMessage.includes(keyword)
+  );
+  
+  if (hasFilterKeyword && videos.length === 0) {
+    // If no videos found but it's clearly about filter replacement, add the video directly
+    videos.push('/assets/Coffee_Machine_Filter_Replacement_Video.mp4');
+  }
+  
+  // Remove duplicates
+  return [...new Set(videos)];
 };
 
 export interface ConversationContext {
@@ -393,6 +571,12 @@ ${conversationContext}
 - Parts Database: Filters, burrs, seals, sensors, electrical components with specific part numbers
 - Safety Protocols: Lockout/tagout, electrical safety, chemical handling, emergency procedures
 
+**AVAILABLE VISUAL RESOURCES:**
+- Multi-step procedure images for complex tasks like filter replacement (3 images per procedure)
+- Individual SVG diagrams for: espresso cleaning, grinder operation, steam wand cleaning, water filter replacement, troubleshooting
+- Video tutorials available for: filter replacement procedures (/assets/Coffee_Machine_Filter_Replacement_Video.mp4)
+- All images are in /assets/ directory and automatically included when relevant
+
 **RESPONSE GUIDELINES:**
 1. **Maintain Conversation Continuity**: Reference previous exchanges and build upon established context
 2. **Be Contextually Aware**: Remember machine selections, ongoing issues, and user preferences
@@ -402,7 +586,7 @@ ${conversationContext}
 6. **Handle Context Transitions**: Smoothly move between topics while maintaining awareness
 7. **Provide Actionable Guidance**: Offer specific next steps based on conversation context
 8. **Remember User Intent**: Understand what the user is trying to accomplish
-9. **Include Relevant Media**: Suggest images/videos when they would help (format: ![description](image-url) or [video:description])
+9. **Include Relevant Media**: For filter replacement and multi-step procedures, the system automatically provides relevant images and videos
 10. **Maintain Professional Tone**: Expert but approachable, technical but understandable
 
 **CURRENT USER MESSAGE:** "${userMessage}"
@@ -510,13 +694,27 @@ export const getOpenAIResponse = async (
       const contextualImages = shouldIncludeImages ? getRelevantImages(userMessage, context) : [];
       const contextualVideos = shouldIncludeImages ? getRelevantVideos(userMessage, context) : [];
       
+      // Debug logging for media detection
+      console.log('🎬 Media Detection Debug:');
+      console.log(`   - User message: "${userMessage}"`);
+      console.log(`   - Should include images: ${shouldIncludeImages}`);
+      console.log(`   - Contextual images: [${contextualImages.length}] ${contextualImages.join(', ')}`);
+      console.log(`   - Contextual videos: [${contextualVideos.length}] ${contextualVideos.join(', ')}`);
+      
       // Extract additional images and videos from the AI response itself
       const { cleanText, images: responseImages } = parseResponseForMedia(aiText);
       const responseVideos = extractVideosFromResponse(aiText);
       
+      // Debug logging for parsed media
+      console.log(`   - Response images: [${responseImages.length}] ${responseImages.join(', ')}`);
+      console.log(`   - Response videos: [${responseVideos.length}] ${responseVideos.join(', ')}`);
+      
       // Combine contextual images with any images found in the response
       const allImages = [...contextualImages, ...responseImages];
       const allVideos = [...contextualVideos, ...responseVideos];
+      
+      console.log(`   - Final images: [${allImages.length}] ${allImages.join(', ')}`);
+      console.log(`   - Final videos: [${allVideos.length}] ${allVideos.join(', ')}`);
       
       return {
         text: cleanText,
@@ -1718,14 +1916,26 @@ const getGeneralResponse = (
  * Parse response for media content (images and videos)
  */
 const parseResponseForMedia = (text: string): { cleanText: string; images: string[] } => {
-  const imageRegex = /!\[.*?\]\((.*?)\)/g;
   let images: string[] = [];
   let cleanText = text;
+  
+  // Original markdown format: ![alt](path)
+  const imageRegex = /!\[.*?\]\((.*?)\)/g;
   let match;
   while ((match = imageRegex.exec(text)) !== null) {
     images.push(match[1]);
     cleanText = cleanText.replace(match[0], '');
   }
+  
+  // New format that OpenAI is generating: (/assets/filename.png)
+  const parenImageRegex = /\(\/assets\/.*?\.(?:png|jpg|jpeg|svg|gif|webp)\)/g;
+  while ((match = parenImageRegex.exec(text)) !== null) {
+    // Remove the parentheses to get just the path
+    const imagePath = match[0].slice(1, -1); // Remove ( and )
+    images.push(imagePath);
+    cleanText = cleanText.replace(match[0], '');
+  }
+  
   return { cleanText: cleanText.trim(), images };
 };
 
@@ -1733,12 +1943,23 @@ const parseResponseForMedia = (text: string): { cleanText: string; images: strin
  * Extract videos from response text
  */
 const extractVideosFromResponse = (text: string): string[] => {
-  const videoRegex = /\[video:(.*?)\]/g;
   const videos: string[] = [];
+  
+  // Original format: [video:path]
+  const videoRegex = /\[video:(.*?)\]/g;
   let match;
   while ((match = videoRegex.exec(text)) !== null) {
     videos.push(match[1]);
   }
+  
+  // New format that OpenAI is generating: (/assets/filename.mp4)
+  const parenVideoRegex = /\(\/assets\/.*?\.(?:mp4|webm|ogg|mov)\)/g;
+  while ((match = parenVideoRegex.exec(text)) !== null) {
+    // Remove the parentheses to get just the path
+    const videoPath = match[0].slice(1, -1); // Remove ( and )
+    videos.push(videoPath);
+  }
+  
   return videos;
 };
 
@@ -1802,12 +2023,20 @@ const getTroubleshootingMedia = (issueType: string): { images: string[], videos:
       videos: [demoConfig.placeholderMedia.videos.troubleshooting]
     },
     "poor coffee quality": {
-      images: [demoConfig.placeholderMedia.images.cleaning, demoConfig.placeholderMedia.images.maintenance],
+      images: ['/assets/brewing-chamber-cleaning.svg', demoConfig.placeholderMedia.images.cleaning, demoConfig.placeholderMedia.images.maintenance],
       videos: [demoConfig.placeholderMedia.videos.maintenance]
     },
     "strange noises": {
-      images: [demoConfig.placeholderMedia.images.grinder, demoConfig.placeholderMedia.images.parts],
+      images: ['/assets/grinder-jam-clearing.svg', demoConfig.placeholderMedia.images.grinder, demoConfig.placeholderMedia.images.parts],
       videos: [demoConfig.placeholderMedia.videos.grinder, demoConfig.placeholderMedia.videos.diagnostic]
+    },
+    "water/steam issues": {
+      images: ['/assets/steam-wand-blockage.svg', demoConfig.placeholderMedia.images.maintenance],
+      videos: [demoConfig.placeholderMedia.videos.maintenance]
+    },
+    "filter issues": {
+      images: ['/assets/filter-stuck-removal.svg', demoConfig.placeholderMedia.images.maintenance],
+      videos: [demoConfig.placeholderMedia.videos.maintenance]
     }
   };
   
@@ -1820,10 +2049,25 @@ const getTroubleshootingMedia = (issueType: string): { images: string[], videos:
 const categorizeIssue = (message: string): string => {
   const messageLower = message.toLowerCase();
   
+  // Check for specific contextual problems first (highest priority)
+  if (/(filter.*stuck|stuck.*filter|can't.*remove.*filter|filter.*won't.*come.*out)/.test(messageLower)) {
+    return "filter issues";
+  }
+  if (/(grinder.*jam|jam.*grinder|grinder.*stuck|burr.*stuck|grinding.*problem)/.test(messageLower)) {
+    return "strange noises";
+  }
+  if (/(steam.*wand.*block|blocked.*steam|steam.*not.*working|steam.*clog)/.test(messageLower)) {
+    return "water/steam issues";
+  }
+  if (/(bitter|sour|off.*taste|bad.*flavor|coffee.*tastes)/.test(messageLower)) {
+    return "poor coffee quality";
+  }
+  
+  // General category detection
   if (/(won't start|not starting|no power|dead|unresponsive)/.test(messageLower)) {
     return "machine won't start";
   }
-  if (/(taste|flavor|quality|bitter|weak|watery|strong)/.test(messageLower)) {
+  if (/(taste|flavor|quality|weak|watery|strong)/.test(messageLower)) {
     return "poor coffee quality";
   }
   if (/(noise|sound|grinding|clicking|whirring|loud)/.test(messageLower)) {
@@ -1844,9 +2088,11 @@ const categorizeIssue = (message: string): string => {
  */
 const getInitialDiagnosticSteps = (issueType: string): string => {
   const steps: Record<string, string> = {
+    "filter issues": "**Filter Removal Emergency Procedure:**\n1. STOP - Do not force the filter\n2. Allow machine to cool completely (15-20 minutes)\n3. Apply gentle twisting motion while pulling\n4. Use filter removal tool if available\n\n⚠️ **Safety First:** Never use excessive force. Is the machine completely cool to touch?",
     "machine won't start": "**Initial Diagnostic Steps:**\n1. Check power connection and outlet\n2. Verify power switch is ON\n3. Look for any indicator lights\n4. Listen for startup sounds\n\nLet's start with step 1. Is the machine plugged in securely?",
-    "poor coffee quality": "**Initial Diagnostic Steps:**\n1. Check water quality and level\n2. Verify grind size and bean freshness\n3. Inspect brewing temperature\n4. Clean brewing components\n\nLet's start with the water system. Is the water reservoir full with fresh water?",
-    "strange noises": "**Initial Diagnostic Steps:**\n1. Identify when the noise occurs\n2. Locate the source of the sound\n3. Check for foreign objects\n4. Inspect mechanical components\n\nFirst, can you describe when exactly you hear the noise? Is it during startup, grinding, or brewing?",
+    "poor coffee quality": "**Coffee Quality Diagnostic:**\n1. Check when you last cleaned the brewing chamber\n2. Verify water quality and temperature\n3. Inspect grind size and bean freshness\n4. Check for mineral buildup or residue\n\nBased on your taste issue, when did you last perform a deep clean of the brewing chamber?",
+    "strange noises": "**Grinder Noise Diagnostic:**\n1. Identify when the noise occurs (grinding, startup, idle)\n2. Check for foreign objects in grinder\n3. Inspect burr alignment and cleanliness\n4. Listen for grinding vs mechanical sounds\n\n🔧 If this is a jamming sound, we'll need to clear the burrs safely. When exactly do you hear the noise?",
+    "water/steam issues": "**Steam System Diagnostic:**\n1. Check if steam wand is completely blocked or partially\n2. Test water flow from other outlets\n3. Listen for pump sounds during steam function\n4. Inspect wand for visible blockages\n\n💨 Steam blockages can affect pressure. Is the wand completely blocked or just reduced flow?",
     "general issue": "**Initial Diagnostic Steps:**\n1. Describe the specific symptoms\n2. Note when the issue occurs\n3. Check basic functions\n4. Review recent changes\n\nCan you provide more details about what exactly is happening with the machine?"
   };
   

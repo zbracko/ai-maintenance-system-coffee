@@ -625,6 +625,11 @@ const ChatInterface: React.FC = () => {
 
   // Enhanced addBotMessage to support images, videos, and dynamic conversations
   const addBotMessage = (text: string, images?: string[], videos?: string[], instructions?: Instruction[], options?: string[]) => {
+    console.log('🎬 addBotMessage called with:');
+    console.log('   - text:', text.substring(0, 50));
+    console.log('   - images:', images);
+    console.log('   - videos:', videos);
+    
     const message: Message = {
       sender: 'bot',
       text,
@@ -632,6 +637,16 @@ const ChatInterface: React.FC = () => {
       videos,
       instructions
     };
+    
+    console.log('🎬 Created message object:', {
+      sender: message.sender,
+      hasImages: !!message.images?.length,
+      hasVideos: !!message.videos?.length,
+      imageCount: message.images?.length || 0,
+      videoCount: message.videos?.length || 0,
+      actualVideos: message.videos
+    });
+    
     setMessages((prev) => [...prev, message]);
     
     // Add to conversation history for OpenAI context
@@ -1520,7 +1535,7 @@ const ChatInterface: React.FC = () => {
           addBotMessage(
             openAIResponse.text, 
             openAIResponse.images || [], 
-            [], // videos
+            openAIResponse.videos || [], // Fixed: was hardcoded to []
             [], // instructions
             openAIResponse.options || []
           );
@@ -2662,42 +2677,120 @@ Comments: ${wo.comments}`;
                             </Slider>
                           </Box>
                         )}
-                        {msg.videos?.map((vid, idx) => (
-                          <Box key={idx} mt={2}>
-                            {/* Placeholder video for demo */}
-                            <Box
-                              sx={{
-                                width: '100%',
-                                height: '200px',
-                                backgroundColor: '#f8fafc',
-                                border: '2px dashed #e2e8f0',
-                                borderRadius: '8px',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                cursor: 'pointer',
-                                transition: 'all 0.3s ease',
-                                '&:hover': {
-                                  backgroundColor: '#f1f5f9',
-                                  borderColor: '#cbd5e1'
-                                }
-                              }}
-                              onClick={() => alert(`Demo video: ${vid}\n\nIn a real system, this would play a maintenance video showing step-by-step procedures.`)}
-                            >
-                              <VideoCallIcon sx={{ fontSize: 56, color: '#64748b', mb: 1 }} />
-                              <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 500 }}>
-                                🎥 Demo Video Placeholder
-                              </Typography>
-                              <Typography variant="caption" color="textSecondary" sx={{ mt: 0.5, textAlign: 'center', px: 2 }}>
-                                {vid}
-                              </Typography>
-                              <Typography variant="caption" color="primary" sx={{ mt: 1, fontStyle: 'italic' }}>
-                                Click to preview video description
-                              </Typography>
+                        {msg.videos?.map((vid, idx) => {
+                          console.log('Processing video:', vid, 'for message:', msg.text.substring(0, 50));
+                          return (
+                            <Box key={idx} mt={2}>
+                              {/* Check if video file exists and display actual video player */}
+                              {(vid.startsWith('/assets/') || 
+                                vid.startsWith('assets/') || 
+                                vid.includes('.mp4') || 
+                                vid.includes('.webm') || 
+                                vid.includes('.ogg') || 
+                                vid.includes('.mov')) ? (
+                                <Box
+                                  sx={{
+                                    width: '100%',
+                                    backgroundColor: '#f8fafc',
+                                    border: '1px solid #e2e8f0',
+                                    borderRadius: '12px',
+                                    overflow: 'hidden',
+                                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                                    transition: 'all 0.3s ease',
+                                    '&:hover': {
+                                      boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)',
+                                      transform: 'scale(1.02)'
+                                    }
+                                  }}
+                                >
+                                  <video
+                                    controls
+                                    style={{
+                                      width: '100%',
+                                      height: 'auto',
+                                      maxHeight: '400px',
+                                      display: 'block'
+                                    }}
+                                    onError={(e) => {
+                                      console.error('Failed to load video:', vid);
+                                      console.error('Error details:', e.currentTarget.src);
+                                      
+                                      // Fallback to placeholder if video fails to load
+                                      e.currentTarget.style.display = 'none';
+                                      e.currentTarget.parentElement.innerHTML = `
+                                        <div style="
+                                          width: 100%;
+                                          height: 200px;
+                                          background-color: #f1f5f9;
+                                          border: 2px dashed #cbd5e1;
+                                          border-radius: 8px;
+                                          display: flex;
+                                          flex-direction: column;
+                                          align-items: center;
+                                          justify-content: center;
+                                          cursor: pointer;
+                                        ">
+                                          <span style="font-size: 48px; color: #64748b; margin-bottom: 8px;">🎥</span>
+                                          <span style="font-size: 14px; color: #64748b; font-weight: 500;">Video not available</span>
+                                          <span style="font-size: 12px; color: #64748b; margin-top: 4px;">${vid}</span>
+                                          <span style="font-size: 10px; color: #ef4444; margin-top: 4px;">Check console for details</span>
+                                        </div>
+                                      `;
+                                    }}
+                                    onLoadedData={() => {
+                                      console.log('Successfully loaded video:', vid);
+                                    }}
+                                  >
+                                    <source src={vid.startsWith('/') ? vid : `/${vid}`} type="video/mp4" />
+                                    <source src={vid.startsWith('/') ? vid : `/${vid}`} type="video/webm" />
+                                    Your browser does not support the video tag.
+                                  </video>
+                                  <Box sx={{ p: 2, backgroundColor: 'rgba(255, 255, 255, 0.9)' }}>
+                                    <Typography variant="body2" sx={{ fontWeight: 600, color: '#1e293b' }}>
+                                      📹 Maintenance Video Tutorial
+                                    </Typography>
+                                    <Typography variant="caption" color="textSecondary" sx={{ mt: 0.5 }}>
+                                      {vid.split('/').pop()?.replace(/\.[^/.]+$/, "").replace(/_/g, ' ')}
+                                    </Typography>
+                                  </Box>
+                                </Box>
+                              ) : (
+                                /* Fallback placeholder for non-video content */
+                                <Box
+                                  sx={{
+                                    width: '100%',
+                                    height: '200px',
+                                    backgroundColor: '#f8fafc',
+                                    border: '2px dashed #e2e8f0',
+                                    borderRadius: '8px',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.3s ease',
+                                    '&:hover': {
+                                      backgroundColor: '#f1f5f9',
+                                      borderColor: '#cbd5e1'
+                                    }
+                                  }}
+                                  onClick={() => alert(`Demo video: ${vid}\n\nIn a real system, this would play a maintenance video showing step-by-step procedures.`)}
+                                >
+                                  <VideoCallIcon sx={{ fontSize: 56, color: '#64748b', mb: 1 }} />
+                                  <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 500 }}>
+                                    🎥 Demo Video Placeholder
+                                  </Typography>
+                                  <Typography variant="caption" color="textSecondary" sx={{ mt: 0.5, textAlign: 'center', px: 2 }}>
+                                    {vid}
+                                  </Typography>
+                                  <Typography variant="caption" color="primary" sx={{ mt: 1, fontStyle: 'italic' }}>
+                                    Click to preview video description
+                                  </Typography>
+                                </Box>
+                              )}
                             </Box>
-                          </Box>
-                        ))}
+                          );
+                        })}
                       </Box>
                     }
                   />

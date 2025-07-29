@@ -28,6 +28,7 @@ import {
   AccordionSummary,
   AccordionDetails,
   Tooltip,
+  Popover,
   IconButton,
   Switch,
   FormControlLabel
@@ -348,6 +349,10 @@ const MainPanel: React.FC = () => {
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
   const [targetPrefix, setTargetPrefix] = useState('');
 
+  // Hover preview state
+  const [previewAnchor, setPreviewAnchor] = useState<HTMLElement | null>(null);
+  const [previewContent, setPreviewContent] = useState<{ type: 'svg' | 'video', path: string, name: string } | null>(null);
+
   // QR Codes
   const [qrMachineModel, setQrMachineModel] = useState<string>('');
   const [qrMachineNumber, setQrMachineNumber] = useState<string>('');
@@ -603,6 +608,33 @@ const MainPanel: React.FC = () => {
                 type: 'file',
                 name: 'safety_procedures.txt',
                 path: 'manuals/maintenance_procedures/safety_procedures.txt'
+              },
+              // Visual Guides - SVG Files
+              {
+                type: 'directory',
+                name: 'visual_guides',
+                prefix: 'manuals/maintenance_procedures/visual_guides/',
+                children: [
+                  { type: 'file', name: 'espresso-machine-cleaning.svg', path: '/assets/espresso-machine-cleaning.svg' },
+                  { type: 'file', name: 'coffee-grinder-operation.svg', path: '/assets/coffee-grinder-operation.svg' },
+                  { type: 'file', name: 'steam-wand-cleaning.svg', path: '/assets/steam-wand-cleaning.svg' },
+                  { type: 'file', name: 'water-filter-replacement.svg', path: '/assets/water-filter-replacement.svg' },
+                  { type: 'file', name: 'troubleshooting-guide.svg', path: '/assets/troubleshooting-guide.svg' },
+                  { type: 'file', name: 'filter-stuck-removal.svg', path: '/assets/filter-stuck-removal.svg' },
+                  { type: 'file', name: 'grinder-jam-clearing.svg', path: '/assets/grinder-jam-clearing.svg' },
+                  { type: 'file', name: 'steam-wand-blockage.svg', path: '/assets/steam-wand-blockage.svg' },
+                  { type: 'file', name: 'brewing-chamber-cleaning.svg', path: '/assets/brewing-chamber-cleaning.svg' }
+                ]
+              },
+              // Video Tutorials
+              {
+                type: 'directory',
+                name: 'video_tutorials',
+                prefix: 'manuals/maintenance_procedures/video_tutorials/',
+                children: [
+                  { type: 'file', name: 'Coffee_Machine_Filter_Replacement_Video.mp4', path: '/assets/Coffee_Machine_Filter_Replacement_Video.mp4' },
+                  { type: 'file', name: 'Cleaning_Grinder.mp4', path: '/assets/Cleaning_Grinder.mp4' }
+                ]
               }
             ]
           }
@@ -2613,6 +2645,11 @@ See main parts catalog for complete listings and pricing.
           <Typography variant="body2" sx={{ mb: 2, color: 'rgba(30, 41, 59, 0.7)' }}>
             Insert an image reference into your manual text.
           </Typography>
+          
+          {/* Maintenance Procedures - General Guides */}
+          <Typography variant="subtitle2" sx={{ mb: 1, color: 'rgba(30, 41, 59, 0.8)', fontWeight: 600 }}>
+            📋 General Maintenance Procedures
+          </Typography>
           <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 2 }}>
             {[
               'espresso-machine-cleaning.svg',
@@ -2626,9 +2663,80 @@ See main parts catalog for complete listings and pricing.
                 variant="outlined"
                 size="small"
                 onClick={() => handleInsertImage(`/assets/${imageName}`, imageName.replace('.svg', '').replace(/-/g, ' '))}
+                onMouseEnter={(e) => {
+                  setPreviewAnchor(e.currentTarget);
+                  setPreviewContent({ type: 'svg', path: `/assets/${imageName}`, name: imageName });
+                }}
+                onMouseLeave={() => {
+                  setPreviewAnchor(null);
+                  setPreviewContent(null);
+                }}
                 sx={{ textTransform: 'none' }}
               >
                 {imageName.replace('.svg', '').replace(/-/g, ' ')}
+              </Button>
+            ))}
+          </Box>
+
+          {/* Problem-Specific Procedures */}
+          <Typography variant="subtitle2" sx={{ mb: 1, color: 'rgba(30, 41, 59, 0.8)', fontWeight: 600 }}>
+            🚨 Problem-Specific Emergency Procedures
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 2 }}>
+            {[
+              'filter-stuck-removal.svg',
+              'grinder-jam-clearing.svg',
+              'steam-wand-blockage.svg',
+              'brewing-chamber-cleaning.svg'
+            ].map((imageName) => (
+              <Button
+                key={imageName}
+                variant="outlined"
+                size="small"
+                color="warning"
+                onClick={() => handleInsertImage(`/assets/${imageName}`, imageName.replace('.svg', '').replace(/-/g, ' '))}
+                onMouseEnter={(e) => {
+                  setPreviewAnchor(e.currentTarget);
+                  setPreviewContent({ type: 'svg', path: `/assets/${imageName}`, name: imageName });
+                }}
+                onMouseLeave={() => {
+                  setPreviewAnchor(null);
+                  setPreviewContent(null);
+                }}
+                sx={{ textTransform: 'none' }}
+              >
+                🔧 {imageName.replace('.svg', '').replace(/-/g, ' ')}
+              </Button>
+            ))}
+          </Box>
+
+          {/* Maintenance Videos */}
+          <Typography variant="subtitle2" sx={{ mb: 1, color: 'rgba(30, 41, 59, 0.8)', fontWeight: 600 }}>
+            🎥 Video Maintenance Guides
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 2 }}>
+            {[
+              { file: 'Coffee_Machine_Filter_Replacement_Video.mp4', title: 'Filter Replacement Guide' },
+              { file: 'Cleaning_Grinder.mp4', title: 'Grinder Cleaning Procedure' }
+            ].map((video) => (
+              <Button
+                key={video.file}
+                variant="contained"
+                size="small"
+                color="secondary"
+                onClick={() => handleInsertVideo(`/assets/${video.file}`, video.title)}
+                onMouseEnter={(e) => {
+                  setPreviewAnchor(e.currentTarget);
+                  setPreviewContent({ type: 'video', path: `/assets/${video.file}`, name: video.file });
+                }}
+                onMouseLeave={() => {
+                  setPreviewAnchor(null);
+                  setPreviewContent(null);
+                }}
+                sx={{ textTransform: 'none' }}
+                startIcon={<span>🎥</span>}
+              >
+                {video.title}
               </Button>
             ))}
           </Box>
@@ -2682,6 +2790,61 @@ See main parts catalog for complete listings and pricing.
           <Button onClick={() => setVideoInsertDialog(false)}>Cancel</Button>
         </DialogActions>
       </Dialog>
+
+      {/* Hover Preview Popover */}
+      <Popover
+        open={Boolean(previewAnchor && previewContent)}
+        anchorEl={previewAnchor}
+        onClose={() => {
+          setPreviewAnchor(null);
+          setPreviewContent(null);
+        }}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'center',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'center',
+        }}
+        sx={{
+          pointerEvents: 'none',
+        }}
+        disableRestoreFocus
+      >
+        {previewContent && (
+          <Box sx={{ p: 2, maxWidth: 300 }}>
+            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+              {previewContent.name}
+            </Typography>
+            {previewContent.type === 'svg' ? (
+              <Box
+                component="img"
+                src={previewContent.path}
+                alt={previewContent.name}
+                sx={{
+                  width: '100%',
+                  maxHeight: 200,
+                  objectFit: 'contain',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  backgroundColor: '#f8fafc'
+                }}
+              />
+            ) : (
+              <Box sx={{ textAlign: 'center', p: 3, border: '1px solid #e2e8f0', borderRadius: '8px', backgroundColor: '#f8fafc' }}>
+                <Box component="span" sx={{ fontSize: '48px' }}>🎥</Box>
+                <Typography variant="body2" sx={{ mt: 1, color: 'rgba(30, 41, 59, 0.7)' }}>
+                  Video File Preview
+                </Typography>
+                <Typography variant="caption" sx={{ color: 'rgba(30, 41, 59, 0.6)' }}>
+                  Click to insert video link
+                </Typography>
+              </Box>
+            )}
+          </Box>
+        )}
+      </Popover>
     </>
   );
 };

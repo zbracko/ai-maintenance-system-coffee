@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
+  <!-- Background -->
+  <rect x="0" y="0" width="400" height="300" fill="#f8fafc"/>
+  
+  <!-- Title -->
+  <text x="200" y="25" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#dc2626">
+    FILTER STUCK - REMOVAL GUIDE
+  </text>
+  <text x="200" y="45" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#4a5568">
+    Emergency Stuck Filter Removal Procedure
+  </text>
+  
+  <!-- Coffee Machine Base -->
+  <rect x="80" y="80" width="240" height="150" fill="#4a5568" rx="15"/>
+  <rect x="90" y="90" width="220" height="130" fill="#718096" rx="10"/>
+  
+  <!-- Stuck Filter Housing (highlighted in red) -->
+  <rect x="140" y="120" width="120" height="40" fill="#dc2626" rx="8"/>
+  <rect x="145" y="125" width="110" height="30" fill="#ef4444" rx="6"/>
+  
+  <!-- Stuck Filter Inside (clogged/jammed) -->
+  <circle cx="200" cy="140" r="15" fill="#7f1d1d"/>
+  <circle cx="200" cy="140" r="12" fill="#991b1b"/>
+  <text x="200" y="145" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" font-weight="bold" fill="white">STUCK</text>
+  
+  <!-- Problem Indicators -->
+  <circle cx="175" cy="115" r="3" fill="#dc2626"/>
+  <circle cx="185" cy="108" r="2" fill="#dc2626"/>
+  <circle cx="195" cy="112" r="2.5" fill="#dc2626"/>
+  <text x="185" y="105" font-family="Arial, sans-serif" font-size="8" fill="#dc2626">!</text>
+  
+  <!-- Tools Required (emphasized) -->
+  <rect x="20" y="180" width="80" height="60" fill="#fef7cd" rx="5"/>
+  <text x="60" y="195" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#92400e">
+    TOOLS NEEDED:
+  </text>
+  
+  <!-- Pliers -->
+  <rect x="30" y="200" width="20" height="4" fill="#4b5563"/>
+  <circle cx="28" cy="202" r="3" fill="#6b7280"/>
+  <circle cx="52" cy="202" r="3" fill="#6b7280"/>
+  <text x="60" y="215" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#92400e">Pliers</text>
+  
+  <!-- Penetrating Oil -->
+  <rect x="30" y="220" width="8" height="15" fill="#065f46" rx="2"/>
+  <rect x="32" y="217" width="4" height="3" fill="#10b981"/>
+  <text x="60" y="230" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#92400e">Oil/Spray</text>
+  
+  <!-- Step-by-Step Instructions -->
+  <circle cx="340" cy="90" r="12" fill="#dc2626"/>
+  <text x="340" y="95" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" font-weight="bold" fill="white">1</text>
+  <text x="340" y="110" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#4a5568">TURN OFF</text>
+  <text x="340" y="120" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#4a5568">& COOL</text>
+  
+  <circle cx="340" cy="140" r="12" fill="#d97706"/>
+  <text x="340" y="145" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" font-weight="bold" fill="white">2</text>
+  <text x="340" y="160" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#4a5568">SPRAY OIL</text>
+  <text x="340" y="170" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#4a5568">WAIT 10MIN</text>
+  
+  <circle cx="340" cy="190" r="12" fill="#059669"/>
+  <text x="340" y="195" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" font-weight="bold" fill="white">3</text>
+  <text x="340" y="210" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#4a5568">USE PLIERS</text>
+  <text x="340" y="220" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#4a5568">GENTLE</text>
+  
+  <!-- Visual Problem Areas -->
+  <path d="M260 140 Q280 130 290 140" stroke="#dc2626" stroke-width="2" fill="none"/>
+  <text x="280" y="135" font-family="Arial, sans-serif" font-size="9" fill="#dc2626">Won't Turn</text>
+  
+  <!-- Corrosion/Buildup Visual -->
+  <ellipse cx="200" cy="155" rx="8" ry="3" fill="#a16207"/>
+  <ellipse cx="200" cy="125" rx="8" ry="3" fill="#a16207"/>
+  <text x="200" y="175" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#92400e">Mineral Buildup</text>
+  
+  <!-- Warning Box -->
+  <rect x="110" y="250" width="180" height="35" fill="#fef2f2" stroke="#dc2626" stroke-width="2" rx="5"/>
+  <text x="200" y="265" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" font-weight="bold" fill="#dc2626">
+    ⚠️ CAUTION: If severely stuck, contact technician
+  </text>
+  <text x="200" y="278" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#dc2626">
+    Force may damage housing threads
+  </text>
+  
+  <!-- Success Indicator -->
+  <path d="M320 140 L310 140" stroke="#059669" stroke-width="2" fill="none" marker-end="url(#successArrow)"/>
+  
+  <!-- Arrow marker definitions -->
+  <defs>
+    <marker id="successArrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#059669"/>
+    </marker>
+  </defs>
+</svg>

@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
+  <!-- Background -->
+  <rect x="0" y="0" width="400" height="300" fill="#f8fafc"/>
+  
+  <!-- Title -->
+  <text x="200" y="25" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#c2410c">
+    BREWING CHAMBER CLEANING
+  </text>
+  <text x="200" y="45" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#4a5568">
+    Deep Clean for Optimal Coffee Taste
+  </text>
+  
+  <!-- Coffee Machine Cross-Section -->
+  <rect x="80" y="70" width="240" height="140" fill="#4a5568" rx="15"/>
+  <rect x="90" y="80" width="220" height="120" fill="#718096" rx="10"/>
+  
+  <!-- Brewing Chamber (central focus) -->
+  <circle cx="200" cy="140" r="45" fill="#451a03"/>
+  <circle cx="200" cy="140" r="40" fill="#92400e"/>
+  <circle cx="200" cy="140" r="35" fill="#a16207"/>
+  
+  <!-- Dirty Buildup (coffee oils/residue) -->
+  <circle cx="185" cy="125" r="3" fill="#7c2d12"/>
+  <circle cx="215" cy="155" r="4" fill="#7c2d12"/>
+  <circle cx="190" cy="160" r="2.5" fill="#7c2d12"/>
+  <circle cx="210" cy="125" r="3.5" fill="#7c2d12"/>
+  <text x="200" y="175" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#7c2d12">Coffee Oil Buildup</text>
+  
+  <!-- Portafilter -->
+  <rect x="160" y="180" width="80" height="15" fill="#6b7280" rx="7"/>
+  <rect x="150" y="190" width="100" height="8" fill="#4b5563" rx="4"/>
+  <circle cx="200" cy="194" r="12" fill="#374151"/>
+  <circle cx="200" cy="194" r="8" fill="#1f2937"/>
+  
+  <!-- Filter Basket (dirty) -->
+  <circle cx="200" cy="194" r="6" fill="#92400e"/>
+  <circle cx="200" cy="194" r="4" fill="#a16207"/>
+  <text x="200" y="210" text-anchor="middle" font-family="Arial, sans-serif" font-size="7" fill="#7c2d12">Dirty Filter</text>
+  
+  <!-- Water Inlet/Outlet -->
+  <rect x="120" y="130" width="20" height="8" fill="#3b82f6" rx="2"/>
+  <rect x="260" y="130" width="20" height="8" fill="#1d4ed8" rx="2"/>
+  
+  <!-- Cleaning Process Visual -->
+  <rect x="20" y="120" width="50" height="70" fill="#fef7cd" rx="5"/>
+  <text x="45" y="135" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" font-weight="bold" fill="#92400e">
+    CLEANING
+  </text>
+  <text x="45" y="145" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" font-weight="bold" fill="#92400e">
+    SUPPLIES:
+  </text>
+  
+  <!-- Cleaning Tablet -->
+  <circle cx="35" cy="155" r="4" fill="#3b82f6"/>
+  <text x="50" y="160" font-family="Arial, sans-serif" font-size="7" fill="#92400e">Tablet</text>
+  
+  <!-- Brush -->
+  <rect x="30" y="165" width="2" height="15" fill="#8b4513"/>
+  <rect x="32" y="165" width="6" height="3" fill="#d2691e"/>
+  <text x="50" y="175" font-family="Arial, sans-serif" font-size="7" fill="#92400e">Brush</text>
+  
+  <!-- Hot Water -->
+  <ellipse cx="40" cy="185" rx="5" ry="3" fill="#60a5fa"/>
+  <text x="50" y="185" font-family="Arial, sans-serif" font-size="7" fill="#92400e">Hot H2O</text>
+  
+  <!-- Step-by-Step Process -->
+  <rect x="30" y="220" width="340" height="70" fill="#f0fdf4" stroke="#10b981" stroke-width="2" rx="5"/>
+  
+  <circle cx="60" cy="240" r="12" fill="#dc2626"/>
+  <text x="60" y="245" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" font-weight="bold" fill="white">1</text>
+  <text x="60" y="260" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#166534">REMOVE</text>
+  <text x="60" y="270" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#166534">PORTAFILTER</text>
+  
+  <circle cx="120" cy="240" r="12" fill="#d97706"/>
+  <text x="120" y="245" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" font-weight="bold" fill="white">2</text>
+  <text x="120" y="260" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#166534">INSERT</text>
+  <text x="120" y="270" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#166534">TABLET</text>
+  
+  <circle cx="180" cy="240" r="12" fill="#0891b2"/>
+  <text x="180" y="245" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" font-weight="bold" fill="white">3</text>
+  <text x="180" y="260" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#166534">RUN CLEAN</text>
+  <text x="180" y="270" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#166534">CYCLE</text>
+  
+  <circle cx="240" cy="240" r="12" fill="#7c3aed"/>
+  <text x="240" y="245" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" font-weight="bold" fill="white">4</text>
+  <text x="240" y="260" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#166534">SCRUB</text>
+  <text x="240" y="270" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#166534">CHAMBER</text>
+  
+  <circle cx="300" cy="240" r="12" fill="#059669"/>
+  <text x="300" y="245" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" font-weight="bold" fill="white">5</text>
+  <text x="300" y="260" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#166534">RINSE</text>
+  <text x="300" y="270" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#166534">THOROUGHLY</text>
+  
+  <!-- Before/After Comparison -->
+  <rect x="330" y="80" width="50" height="60" fill="#fef2f2" rx="5"/>
+  <text x="355" y="95" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" font-weight="bold" fill="#7f1d1d">BEFORE</text>
+  <circle cx="355" cy="110" r="8" fill="#7c2d12"/>
+  <circle cx="355" cy="110" r="6" fill="#92400e"/>
+  <text x="355" y="125" text-anchor="middle" font-family="Arial, sans-serif" font-size="7" fill="#7f1d1d">Bitter</text>
+  <text x="355" y="135" text-anchor="middle" font-family="Arial, sans-serif" font-size="7" fill="#7f1d1d">Taste</text>
+  
+  <rect x="330" y="150" width="50" height="60" fill="#f0fdf4" rx="5"/>
+  <text x="355" y="165" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" font-weight="bold" fill="#166534">AFTER</text>
+  <circle cx="355" cy="180" r="8" fill="#22d3ee"/>
+  <circle cx="355" cy="180" r="6" fill="#06b6d4"/>
+  <text x="355" y="195" text-anchor="middle" font-family="Arial, sans-serif" font-size="7" fill="#166534">Clean</text>
+  <text x="355" y="205" text-anchor="middle" font-family="Arial, sans-serif" font-size="7" fill="#166534">Fresh</text>
+  
+  <!-- Cleaning Frequency -->
+  <rect x="100" y="50" width="200" height="15" fill="#fffbeb" rx="3"/>
+  <text x="200" y="60" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#92400e">
+    🗓️ CLEAN WEEKLY or after 200 cups
+  </text>
+  
+  <!-- Warning -->
+  <polygon points="350,230 360,245 340,245" fill="#fbbf24"/>
+  <text x="350" y="240" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" font-weight="bold" fill="#92400e">!</text>
+  <text x="350" y="255" text-anchor="middle" font-family="Arial, sans-serif" font-size="7" fill="#92400e">Never use</text>
+  <text x="350" y="265" text-anchor="middle" font-family="Arial, sans-serif" font-size="7" fill="#92400e">soap/detergent</text>
+  
+  <!-- Clean Chamber Visual -->
+  <path d="M245 140 Q260 130 275 140" stroke="#10b981" stroke-width="2" fill="none" marker-end="url(#cleanArrow)"/>
+  <text x="260" y="130" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#10b981">Clean Result</text>
+  
+  <!-- Arrow marker definitions -->
+  <defs>
+    <marker id="cleanArrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
+    </marker>
+  </defs>
+</svg>
