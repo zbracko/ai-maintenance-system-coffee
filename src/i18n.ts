@@ -282,7 +282,37 @@ const resources = {
         workflowCompletedNoDownload: "Workflow completed successfully",
         // More missing keys found in ChatInterface
         typoTestExample: '⚡ Typo Test: "machien broke"',
-        quickDemoActions: "🎪 **Quick Demo Actions** - Click any button below for instant demonstration:"
+        quickDemoActions: "🎪 **Quick Demo Actions** - Click any button below for instant demonstration:",
+        chatInterface: {
+          placeholder: "Type your message here or use voice commands...",
+          placeholderMaintenance: "Ask me anything about maintenance...",
+          voiceButton: "Voice Command", 
+          sendButton: "Send",
+          scanButton: "Scan QR",
+          helpButton: "Help",
+          resetButton: "Reset",
+          demoMode: "Demo Mode",
+          demoModeActive: "Demo Mode Active",
+          exitDemo: "Exit Demo",
+          listening: "Listening...",
+          processing: "Processing...",
+          speechNotSupported: "Speech recognition not supported",
+          microphoneError: "Microphone access error",
+          noSpeechDetected: "No speech detected",
+          speechError: "Speech recognition error",
+          seeMyWorkOrders: "See my work orders",
+          createNewWorkOrder: "Create a new work order",
+          viewMaintenanceManual: "View Maintenance Manual",
+          welcomeMessage: "☕ **Welcome to the AI Coffee Machine Maintenance System Demo!**",
+          advancedFeatures: "🚀 **Advanced Features Showcase:**",
+          naturalLanguageUnderstanding: "🤖 Natural Language Understanding:",
+          typoVariations: "I can understand typos and variations",
+          conversationalFlow: "Conversational flow: I remember context throughout our chat",
+          multipleInputStyles: "Multiple input styles: formal technical language or casual descriptions",
+          demoConversationStarters: "🎯 Demo Conversation Starters:",
+          tryTypingTypos: "💬 Try typing with intentional typos like:",
+          readyToExplore: "Ready to explore? Try any of the examples above or ask me anything about coffee machine maintenance!"
+        }
       }
     }
   },
@@ -1576,6 +1606,36 @@ const resources = {
         // More missing keys found in ChatInterface
         typoTestExample: '⚡ Prueba de errores: "maquina rota"',
         quickDemoActions: "🎪 **Acciones de Demo Rápido** - Haga clic en cualquier botón para demostración instantánea:",
+        chatInterface: {
+          placeholder: "Escribe tu mensaje aquí o usa comandos de voz...",
+          placeholderMaintenance: "Pregúntame cualquier cosa sobre mantenimiento...",
+          voiceButton: "Comando de Voz",
+          sendButton: "Enviar",
+          scanButton: "Escanear QR",
+          helpButton: "Ayuda",
+          resetButton: "Reiniciar",
+          demoMode: "Modo Demo",
+          demoModeActive: "Modo Demo Activo",
+          exitDemo: "Salir del Demo",
+          listening: "Escuchando...",
+          processing: "Procesando...",
+          speechNotSupported: "Reconocimiento de voz no compatible",
+          microphoneError: "Error de acceso al micrófono",
+          noSpeechDetected: "No se detectó habla",
+          speechError: "Error de reconocimiento de voz",
+          seeMyWorkOrders: "Ver mis órdenes de trabajo",
+          createNewWorkOrder: "Crear una nueva orden de trabajo",
+          viewMaintenanceManual: "Ver Manual de Mantenimiento",
+          welcomeMessage: "☕ **¡Bienvenido al Demo del Sistema de Mantenimiento de Máquinas de Café con IA!**",
+          advancedFeatures: "🚀 **Demostración de Características Avanzadas:**",
+          naturalLanguageUnderstanding: "🤖 Comprensión de Lenguaje Natural:",
+          typoVariations: "Puedo entender errores tipográficos y variaciones",
+          conversationalFlow: "Flujo conversacional: Recuerdo el contexto durante nuestra conversación",
+          multipleInputStyles: "Múltiples estilos de entrada: lenguaje técnico formal o descripciones casuales",
+          demoConversationStarters: "🎯 Iniciadores de Conversación de Demo:",
+          tryTypingTypos: "💬 Intenta escribir con errores tipográficos intencionales como:",
+          readyToExplore: "¿Listo para explorar? ¡Prueba cualquiera de los ejemplos anteriores o pregúntame cualquier cosa sobre mantenimiento de máquinas de café!"
+        },
         adminPanel: {
           tabs: {
             technicians: "☕ Técnicos",
@@ -1895,6 +1955,7 @@ const resources = {
         },
         chatInterface: {
           placeholder: "Tapez votre message ici ou utilisez les commandes vocales...",
+          placeholderMaintenance: "Demandez-moi n'importe quoi sur la maintenance...",
           voiceButton: "Commande vocale",
           sendButton: "Envoyer",
           scanButton: "Scanner QR",
@@ -1908,7 +1969,19 @@ const resources = {
           speechNotSupported: "Reconnaissance vocale non prise en charge",
           microphoneError: "Erreur d'accès au microphone",
           noSpeechDetected: "Aucune parole détectée",
-          speechError: "Erreur de reconnaissance vocale"
+          speechError: "Erreur de reconnaissance vocale",
+          seeMyWorkOrders: "Voir mes ordres de travail",
+          createNewWorkOrder: "Créer un nouvel ordre de travail",
+          viewMaintenanceManual: "Voir le Manuel de Maintenance",
+          welcomeMessage: "☕ **Bienvenue dans la Démo du Système de Maintenance de Machines à Café IA!**",
+          advancedFeatures: "🚀 **Démonstration de Fonctionnalités Avancées:**",
+          naturalLanguageUnderstanding: "🤖 Compréhension du Langage Naturel:",
+          typoVariations: "Je peux comprendre les fautes de frappe et les variations",
+          conversationalFlow: "Flux conversationnel: Je me souviens du contexte tout au long de notre conversation",
+          multipleInputStyles: "Styles d'entrée multiples: langage technique formel ou descriptions décontractées",
+          demoConversationStarters: "🎯 Démarreurs de Conversation de Démo:",
+          tryTypingTypos: "💬 Essayez de taper avec des fautes de frappe intentionnelles comme:",
+          readyToExplore: "Prêt à explorer? Essayez n'importe lequel des exemples ci-dessus ou demandez-moi n'importe quoi sur la maintenance des machines à café!"
         },
         adminPanel: {
           tabs: {

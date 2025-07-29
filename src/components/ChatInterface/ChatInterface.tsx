@@ -358,7 +358,7 @@ const ChatInterface: React.FC = () => {
   const [modalImage, setModalImage] = useState<string | null>(null);
 
   const [loadingResponse, setLoadingResponse] = useState(false);
-  const [loadingText, setLoadingText] = useState("Reading...");
+  const [loadingText, setLoadingText] = useState(t('chatInterface.processing'));
 
   // ======== Added for media capture ========
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -3173,7 +3173,7 @@ Comments: ${wo.comments}`;
         </IconButton>
         <TextField
           variant="standard"
-          placeholder="Ask me anything about maintenance..."
+          placeholder={t('chatInterface.placeholderMaintenance')}
           fullWidth
           InputProps={{ 
             disableUnderline: true,
@@ -3432,9 +3432,9 @@ Comments: ${wo.comments}`;
         <Box sx={{ width: '100%', mb: 5 }}>
           <Slider {...mobileButtonSliderSettings}>
             {[
-              { icon: ListAltIcon, text: 'See my work orders', color: '#10b981', action: () => { setInput('see my work orders'); handleSend(); } },
-              { icon: NoteAddIcon, text: 'Create a new work order', color: '#6366f1', action: () => { setInput('create a new work order'); handleSend(); } },
-              { icon: ListAltIcon, text: 'View Maintenance Manual', color: '#8b5cf6', action: () => { setInput('view maintenance manual'); handleSend(); } }
+              { icon: ListAltIcon, text: t('chatInterface.seeMyWorkOrders'), color: '#10b981', action: () => { setInput(t('chatInterface.seeMyWorkOrders')); handleSend(); } },
+              { icon: NoteAddIcon, text: t('chatInterface.createNewWorkOrder'), color: '#6366f1', action: () => { setInput(t('chatInterface.createNewWorkOrder')); handleSend(); } },
+              { icon: ListAltIcon, text: t('chatInterface.viewMaintenanceManual'), color: '#8b5cf6', action: () => { setInput(t('chatInterface.viewMaintenanceManual')); handleSend(); } }
             ].map((button, index) => (
               <Box key={index} px={1}>
                 <Button
@@ -3497,9 +3497,9 @@ Comments: ${wo.comments}`;
           }}
         >
           {[
-            { icon: ListAltIcon, text: 'See my work orders', color: '#10b981', action: () => { setInput('see my work orders'); handleSend(); } },
-            { icon: NoteAddIcon, text: 'Create a new work order', color: '#6366f1', action: () => { setInput('create a new work order'); handleSend(); } },
-            { icon: ListAltIcon, text: 'View Maintenance Manual', color: '#8b5cf6', action: () => { setInput('view maintenance manual'); handleSend(); } }
+            { icon: ListAltIcon, text: t('chatInterface.seeMyWorkOrders'), color: '#10b981', action: () => { setInput(t('chatInterface.seeMyWorkOrders')); handleSend(); } },
+            { icon: NoteAddIcon, text: t('chatInterface.createNewWorkOrder'), color: '#6366f1', action: () => { setInput(t('chatInterface.createNewWorkOrder')); handleSend(); } },
+            { icon: ListAltIcon, text: t('chatInterface.viewMaintenanceManual'), color: '#8b5cf6', action: () => { setInput(t('chatInterface.viewMaintenanceManual')); handleSend(); } }
           ].map((button, index) => (
             <Button
               key={index}
