@@ -2672,8 +2672,15 @@ Comments: ${wo.comments}`;
                             <Slider {...sliderSettings} ref={sliderRef}>
                               {msg.images.map((img, idx) => (
                                 <Box key={idx} textAlign="center">
-                                  {/* Display actual images or fallback to placeholder */}
-                                  {img.startsWith('/assets/') || img.startsWith('assets/') ? (
+                                  {/* Display actual images - check for asset paths or any image extensions */}
+                                  {(img.startsWith('/assets/') || 
+                                    img.startsWith('assets/') || 
+                                    img.includes('.png') || 
+                                    img.includes('.jpg') || 
+                                    img.includes('.jpeg') || 
+                                    img.includes('.svg') || 
+                                    img.includes('.gif') || 
+                                    img.includes('.webp')) ? (
                                     <Box
                                       component="img"
                                       src={img.startsWith('/') ? img : `/${img}`}
