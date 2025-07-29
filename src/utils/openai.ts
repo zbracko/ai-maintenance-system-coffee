@@ -9,11 +9,20 @@ import { demoWorkOrders, demoPastLogs, demoMachineOptions } from '../data/demoDa
 import { demoConfig } from '../config/demoConfig';
 
 // OpenAI Configuration
-const OPENAI_API_KEY = process.env.REACT_APP_OPENAI_API_KEY || '';
+const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY || '';
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
+
+// Debug logging for environment variables
+console.log('🌍 Environment Variables Debug (Vite):');
+console.log(`   - NODE_ENV: ${import.meta.env.MODE}`);
+console.log(`   - All VITE_ vars:`, Object.keys(import.meta.env).filter(key => key.startsWith('VITE_')));
+console.log(`   - VITE_OPENAI_API_KEY exists: ${!!import.meta.env.VITE_OPENAI_API_KEY}`);
+console.log(`   - Raw env value: ${import.meta.env.VITE_OPENAI_API_KEY ? '[REDACTED]' : 'undefined'}`);
 
 // Debug logging for OpenAI usage
 console.log(`🔑 OpenAI API Key configured: ${OPENAI_API_KEY ? 'Yes' : 'No'} (Length: ${OPENAI_API_KEY?.length || 0})`);
+console.log(`🔑 API Key first 10 chars: ${OPENAI_API_KEY?.substring(0, 10) || 'undefined'}`);
+console.log(`🔑 API Key last 4 chars: ${OPENAI_API_KEY?.substring(OPENAI_API_KEY.length - 4) || 'undefined'}`);
 console.log(`🌐 OpenAI API URL: ${OPENAI_API_URL}`);
 
 export interface Message {
@@ -175,6 +184,12 @@ export const getOpenAIResponse = async (
 ): Promise<ContextualResponse> => {
   // Try OpenAI first - only fall back to demo if explicitly disabled or if there's an error
   const shouldUseOpenAI = OPENAI_API_KEY && OPENAI_API_KEY !== 'your-openai-api-key-here' && OPENAI_API_KEY.length > 10;
+  
+  console.log('🔍 OpenAI Validation Details:');
+  console.log(`   - API Key exists: ${!!OPENAI_API_KEY}`);
+  console.log(`   - API Key not placeholder: ${OPENAI_API_KEY !== 'your-openai-api-key-here'}`);
+  console.log(`   - API Key length > 10: ${OPENAI_API_KEY?.length > 10} (actual length: ${OPENAI_API_KEY?.length || 0})`);
+  console.log(`   - Should use OpenAI: ${shouldUseOpenAI}`);
   
   if (shouldUseOpenAI) {
     try {
