@@ -4,13 +4,16 @@ frontend:
     preBuild:
       commands:
         - npm ci --cache .npm --prefer-offline
+        - echo "Available environment variables:"
+        - env | grep -E "(VITE_|REACT_APP_)" || echo "No VITE_ or REACT_APP_ variables found"
     build:
       commands:
         - echo "Building with environment variables..."
         - 'echo "VITE_OPENAI_API_KEY is set: $(if [ -n "$VITE_OPENAI_API_KEY" ]; then echo "Yes"; else echo "No"; fi)"'
+        - 'echo "VITE_OPENAI_API_KEY length: ${#VITE_OPENAI_API_KEY}"'
         - npm run build
         - echo "Injecting runtime environment variables..."
-        - 'sed -i "s/%%VITE_OPENAI_API_KEY%%/$VITE_OPENAI_API_KEY/g" dist/index.html'
+        - node inject-env.js
   artifacts:
     baseDirectory: dist
     files:
