@@ -159,6 +159,43 @@ const MAINTENANCE_IMAGES = {
 };
 
 /**
+ * Multi-step procedures that require multiple images and videos
+ */
+const MULTI_STEP_PROCEDURES = {
+  'filter replacement': {
+    images: [
+      '/assets/water-filter-replacement.svg',
+      '/assets/espresso-machine-cleaning.svg', 
+      '/assets/troubleshooting-guide.svg'
+    ],
+    videos: ['/assets/Coffee_Machine_Filter_Replacement_Video.mp4']
+  },
+  'water filter replacement': {
+    images: [
+      '/assets/water-filter-replacement.svg',
+      '/assets/espresso-machine-cleaning.svg',
+      '/assets/troubleshooting-guide.svg'
+    ],
+    videos: ['/assets/Coffee_Machine_Filter_Replacement_Video.mp4']
+  },
+  'descaling': {
+    images: [
+      '/assets/espresso-machine-cleaning.svg',
+      '/assets/water-filter-replacement.svg'
+    ],
+    videos: []
+  },
+  'deep cleaning': {
+    images: [
+      '/assets/espresso-machine-cleaning.svg',
+      '/assets/steam-wand-cleaning.svg',
+      '/assets/coffee-grinder-operation.svg'
+    ],
+    videos: []
+  }
+};
+
+/**
  * Detect if images should be included based on user message and context
  */
 const detectImageNeed = (userMessage: string, context: ConversationContext): boolean => {
@@ -184,10 +221,24 @@ const detectImageNeed = (userMessage: string, context: ConversationContext): boo
  */
 const getRelevantImages = (userMessage: string, context: ConversationContext): string[] => {
   const message = userMessage.toLowerCase();
-  const images: string[] = [];
+  let images: string[] = [];
   const addedImages = new Set<string>(); // Prevent duplicates
   
-  // Check each maintenance topic
+  // First check for multi-step procedures
+  for (const [procedure, config] of Object.entries(MULTI_STEP_PROCEDURES)) {
+    if (message.includes(procedure)) {
+      config.images.forEach(img => {
+        if (!addedImages.has(img)) {
+          images.push(img);
+          addedImages.add(img);
+        }
+      });
+      // If we found a multi-step procedure, return its images (don't add more)
+      return images;
+    }
+  }
+  
+  // If no multi-step procedure found, check individual maintenance topics
   Object.entries(MAINTENANCE_IMAGES).forEach(([topic, imagePath]) => {
     if (message.includes(topic) && !addedImages.has(imagePath)) {
       images.push(imagePath);
@@ -205,6 +256,25 @@ const getRelevantImages = (userMessage: string, context: ConversationContext): s
   
   // Limit to 3 images max to avoid overwhelming
   return images.slice(0, 3);
+};
+
+/**
+ * Get relevant videos for multi-step procedures
+ */
+const getRelevantVideos = (userMessage: string, context: ConversationContext): string[] => {
+  const message = userMessage.toLowerCase();
+  const videos: string[] = [];
+  
+  // Check for multi-step procedures that have videos
+  for (const [procedure, config] of Object.entries(MULTI_STEP_PROCEDURES)) {
+    if (message.includes(procedure) && config.videos.length > 0) {
+      videos.push(...config.videos);
+      // Return first matching procedure's videos
+      return videos;
+    }
+  }
+  
+  return videos;
 };
 
 export interface ConversationContext {
@@ -438,18 +508,20 @@ export const getOpenAIResponse = async (
       // Intelligent image detection based on user message and AI response
       const shouldIncludeImages = detectImageNeed(userMessage, context);
       const contextualImages = shouldIncludeImages ? getRelevantImages(userMessage, context) : [];
+      const contextualVideos = shouldIncludeImages ? getRelevantVideos(userMessage, context) : [];
       
       // Extract additional images and videos from the AI response itself
       const { cleanText, images: responseImages } = parseResponseForMedia(aiText);
-      const videos = extractVideosFromResponse(aiText);
+      const responseVideos = extractVideosFromResponse(aiText);
       
       // Combine contextual images with any images found in the response
       const allImages = [...contextualImages, ...responseImages];
+      const allVideos = [...contextualVideos, ...responseVideos];
       
       return {
         text: cleanText,
         images: allImages.length > 0 ? allImages : undefined,
-        videos: videos,
+        videos: allVideos.length > 0 ? allVideos : undefined,
         options: [], // No predefined options - pure AI response
         requiresAction: needsUserAction(cleanText, context)
       };
@@ -599,11 +671,12 @@ const generateGreetingResponse = (
   // Include images if user is asking for visual help
   const shouldIncludeImages = detectImageNeed(userMessage, context);
   const contextualImages = shouldIncludeImages ? getRelevantImages(userMessage, context) : [];
+  const contextualVideos = shouldIncludeImages ? getRelevantVideos(userMessage, context) : [];
   
   return {
     text,
     images: contextualImages,
-    videos: [],
+    videos: contextualVideos,
     options: [],
     requiresAction: false
   };
@@ -840,11 +913,12 @@ const generateWorkOrderResponse = (message: string, context: ConversationContext
   // Include images if applicable for work order context
   const shouldIncludeImages = detectImageNeed(message, context);
   const contextualImages = shouldIncludeImages ? getRelevantImages(message, context) : [];
+  const contextualVideos = shouldIncludeImages ? getRelevantVideos(message, context) : [];
   
   return {
     text,
     images: contextualImages,
-    videos: [],
+    videos: contextualVideos,
     options: [],
     requiresAction: true
   };
@@ -1051,11 +1125,12 @@ const generateDefaultResponse = (
   // Include images if applicable for default response
   const shouldIncludeImages = detectImageNeed(message, context);
   const contextualImages = shouldIncludeImages ? getRelevantImages(message, context) : [];
+  const contextualVideos = shouldIncludeImages ? getRelevantVideos(message, context) : [];
   
   return {
     text,
     images: contextualImages,
-    videos: [],
+    videos: contextualVideos,
     options: [],
     requiresAction: false
   };
