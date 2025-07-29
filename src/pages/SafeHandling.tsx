@@ -27,125 +27,129 @@ import { demoConfig } from '../config/demoConfig';
 // Demo safety procedures data
 const demoSafetyProcedures = [
   {
-    id: 'electrical-safety',
-    title: 'Electrical Safety Procedures',
-    description: 'Essential electrical safety protocols for coffee machine maintenance',
+    id: 'coffee-machine-electrical',
+    title: 'Coffee Machine Electrical Safety',
+    description: 'Essential electrical safety protocols for coffee equipment maintenance',
+    qrCode: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2ZmZiIvPjxnIGZpbGw9IiMwMDAiPjxyZWN0IHg9IjgiIHk9IjgiIHdpZHRoPSI0IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIxNiIgeT0iOCIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjI0IiB5PSI4IiB3aWR0aD0iNCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMzIiIHk9IjgiIHdpZHRoPSI0IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSI0MCIgeT0iOCIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjQ4IiB5PSI4IiB3aWR0aD0iNCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iNTYiIHk9IjgiIHdpZHRoPSI0IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSI2NCIgeT0iOCIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjcyIiB5PSI4IiB3aWR0aD0iNCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iODAiIHk9IjgiIHdpZHRoPSI0IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSI4OCIgeT0iOCIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjgiIHk9IjE2IiB3aWR0aD0iNCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iODgiIHk9IjE2IiB3aWR0aD0iNCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iOCIgeT0iMjQiIHdpZHRoPSI0IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIyNCIgeT0iMjQiIHdpZHRoPSI0IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIzMiIgeT0iMjQiIHdpZHRoPSI0IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSI0MCIgeT0iMjQiIHdpZHRoPSI0IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSI2NCIgeT0iMjQiIHdpZHRoPSI0IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSI4OCIgeT0iMjQiIHdpZHRoPSI0IiBoZWlnaHQ9IjQiLz48L2c+PC9zdmc+',
     points: [
       {
-        id: 'power-disconnect',
-        text: 'Always disconnect power before any maintenance work',
-        image: '/src/assets/Picture2.png',
+        id: 'espresso-power-off',
+        text: 'Always switch OFF and unplug espresso machine before any maintenance work',
+        image: '/src/assets/espresso-machine-cleaning.svg',
         video: null
       },
       {
-        id: 'lockout-tagout',
-        text: 'Implement proper lockout/tagout procedures',
-        image: '/src/assets/Picture3.png',
+        id: 'grinder-lockout',
+        text: 'Implement lockout procedures for coffee grinder electrical connections',
+        image: '/src/assets/coffee-grinder-operation.svg',
         video: null
       },
       {
-        id: 'grounding',
-        text: 'Verify proper grounding of all electrical components',
-        image: '/src/assets/Picture4.png',
+        id: 'water-electrical',
+        text: 'Ensure no water contact with electrical components during cleaning',
+        image: '/src/assets/steam-wand-cleaning.svg',
         video: null
       },
       {
-        id: 'voltage-testing',
-        text: 'Use voltage tester to confirm zero energy state',
-        image: '/src/assets/Picture5.png',
+        id: 'voltage-verification',
+        text: 'Use multimeter to verify zero voltage before opening electrical panels',
+        image: '/src/assets/troubleshooting-guide.svg',
         video: null
       }
     ]
   },
   {
-    id: 'thermal-safety',
-    title: 'Thermal Protection',
-    description: 'Protection against burns and heat-related injuries',
+    id: 'hot-surfaces-steam',
+    title: 'Hot Surfaces & Steam Safety',
+    description: 'Protection from burns and steam-related injuries during coffee service',
+    qrCode: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2ZmZiIvPjxnIGZpbGw9IiMwMDAiPjxyZWN0IHg9IjEyIiB5PSIxMiIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjIwIiB5PSIxMiIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjI4IiB5PSIxMiIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjM2IiB5PSIxMiIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjQ0IiB5PSIxMiIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjUyIiB5PSIxMiIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjY4IiB5PSIxMiIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPjxyZWN0IHg9Ijc2IiB5PSIxMiIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjEyIiB5PSIyMCIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjM2IiB5PSIyMCIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjUyIiB5PSIyMCIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPjxyZWN0IHg9Ijc2IiB5PSIyMCIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjEyIiB5PSIyOCIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjIwIiB5PSIyOCIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjI4IiB5PSIyOCIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPjx0ZXh0IHg9IjUwIiB5PSI5MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSI4cHgiPkhPVDwvdGV4dD48L2c+PC9zdmc+',
     points: [
       {
-        id: 'cooling-time',
-        text: 'Allow machine to cool for minimum 30 minutes before service',
-        image: '/src/assets/Picture2.png',
+        id: 'cooling-period',
+        text: 'Allow espresso machine to cool for minimum 30 minutes after use before maintenance',
+        image: '/src/assets/espresso-machine-cleaning.svg',
         video: null
       },
       {
-        id: 'heat-gloves',
-        text: 'Use heat-resistant gloves rated for 400°F minimum',
-        image: '/src/assets/Picture3.png',
+        id: 'heat-resistant-gloves',
+        text: 'Use heat-resistant gloves when handling hot portafilters and group heads',
+        image: '/src/assets/steam-wand-cleaning.svg',
         video: null
       },
       {
-        id: 'steam-safety',
-        text: 'Never work on pressurized steam systems',
-        image: '/src/assets/Picture4.png',
+        id: 'steam-wand-safety',
+        text: 'Never remove steam wand tip while system is pressurized',
+        image: '/src/assets/steam-wand-cleaning.svg',
         video: null
       },
       {
-        id: 'temperature-check',
-        text: 'Use infrared thermometer to verify safe temperatures',
-        image: '/src/assets/Picture5.png',
+        id: 'temperature-monitoring',
+        text: 'Use infrared thermometer to verify safe surface temperatures before contact',
+        image: '/src/assets/troubleshooting-guide.svg',
         video: null
       }
     ]
   },
   {
-    id: 'chemical-safety',
-    title: 'Chemical Handling',
-    description: 'Safe handling of cleaning chemicals and descaling solutions',
+    id: 'cleaning-chemicals',
+    title: 'Coffee Cleaning Chemical Safety',
+    description: 'Safe handling of descaling solutions and coffee cleaning chemicals',
+    qrCode: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2ZmZiIvPjxnIGZpbGw9IiMwMDAiPjxyZWN0IHg9IjE2IiB5PSIxNiIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjI0IiB5PSIxNiIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjQwIiB5PSIxNiIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPjxyZWN0IHg0OGQiIHk9IjE2IiB3aWR0aD0iNCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iNTYiIHk9IjE2IiB3aWR0aD0iNCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iNjQiIHk9IjE2IiB3aWR0aD0iNCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iNzIiIHk9IjE2IiB3aWR0aD0iNCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMTYiIHk9IjI0IiB3aWR0aD0iNCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iNDAiIHk9IjI0IiB3aWR0aD0iNCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iNzIiIHk9IjI0IiB3aWR0aD0iNCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMTYiIHk9IjMyIiB3aWR0aD0iNCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMjQiIHk9IjMyIiB3aWR0aD0iNCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMzIiIHk9IjMyIiB3aWR0aD0iNCIgaGVpZ2h0PSI0Ii8+PHRleHQgeD0iNTAiIHk9Ijg4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjhweCIgZmlsbD0iIzAwNjZjYyI+Q0hFTTwvdGV4dD48L2c+PC9zdmc+',
     points: [
       {
-        id: 'ppe-required',
-        text: 'Wear chemical-resistant gloves and eye protection',
-        image: '/src/assets/Picture2.png',
+        id: 'descaling-ppe',
+        text: 'Wear chemical-resistant gloves and eye protection when handling descaling solutions',
+        image: '/src/assets/water-filter-replacement.svg',
         video: null
       },
       {
-        id: 'ventilation',
-        text: 'Ensure adequate ventilation when using chemicals',
-        image: '/src/assets/Picture3.png',
+        id: 'coffee-ventilation',
+        text: 'Ensure adequate ventilation when using espresso machine cleaners',
+        image: '/src/assets/espresso-machine-cleaning.svg',
         video: null
       },
       {
-        id: 'sds-review',
-        text: 'Review Safety Data Sheets before chemical use',
-        image: '/src/assets/Picture4.png',
+        id: 'chemical-sds',
+        text: 'Review Safety Data Sheets for all coffee cleaning products before use',
+        image: '/src/assets/troubleshooting-guide.svg',
         video: null
       },
       {
-        id: 'emergency-rinse',
-        text: 'Know location of emergency eyewash and shower stations',
-        image: '/src/assets/Picture5.png',
+        id: 'emergency-wash',
+        text: 'Know location of emergency eyewash station for chemical exposure',
+        image: '/src/assets/water-filter-replacement.svg',
         video: null
       }
     ]
   },
   {
-    id: 'mechanical-safety',
-    title: 'Mechanical Safety',
-    description: 'Protection from moving parts and mechanical hazards',
+    id: 'coffee-equipment-mechanical',
+    title: 'Coffee Equipment Mechanical Safety',
+    description: 'Protection from moving parts and mechanical hazards in coffee equipment',
+    qrCode: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2ZmZiIvPjxnIGZpbGw9IiMwMDAiPjxyZWN0IHg9IjIwIiB5PSIyMCIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjI4IiB5PSIyMCIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjM2IiB5PSIyMCIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjQ0IiB5PSIyMCIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjUyIiB5PSIyMCIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjYwIiB5PSIyMCIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjY4IiB5PSIyMCIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjIwIiB5PSIyOCIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjQ0IiB5PSIyOCIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjY4IiB5PSIyOCIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjIwIiB5PSIzNiIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPjx0ZXh0IHg9IjUwIiB5PSI4NiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSI4cHgiIGZpbGw9IiNmZjY2MDAiPk1FQ0g8L3RleHQ+PC9nPjwvc3ZnPg==',
     points: [
       {
-        id: 'moving-parts',
-        text: 'Secure all moving parts before maintenance',
-        image: '/src/assets/Picture2.png',
+        id: 'grinder-burr-safety',
+        text: 'Secure coffee grinder burrs and turn off power before cleaning or adjustment',
+        image: '/src/assets/coffee-grinder-operation.svg',
         video: null
       },
       {
-        id: 'pinch-points',
-        text: 'Be aware of pinch points and crushing hazards',
-        image: '/src/assets/Picture3.png',
+        id: 'group-head-caution',
+        text: 'Be aware of group head spring tension and moving parts during service',
+        image: '/src/assets/espresso-machine-cleaning.svg',
         video: null
       },
       {
-        id: 'tool-safety',
-        text: 'Use proper tools and maintain them in good condition',
-        image: '/src/assets/Picture4.png',
+        id: 'tool-maintenance',
+        text: 'Use proper coffee tools and maintain them in good condition',
+        image: '/src/assets/troubleshooting-guide.svg',
         video: null
       },
       {
-        id: 'lifting-techniques',
-        text: 'Use proper lifting techniques for heavy components',
-        image: '/src/assets/Picture5.png',
+        id: 'machine-lifting',
+        text: 'Use proper lifting techniques when moving heavy espresso machines',
+        image: '/src/assets/water-filter-replacement.svg',
         video: null
       }
     ]
@@ -276,7 +280,7 @@ const SafeHandling: React.FC = () => {
           textAlign: 'center'
         }}
       >
-        {t('safeHandling.title')}
+        Coffee Equipment Safety Procedures
       </Typography>
       
       <Typography 
@@ -288,7 +292,7 @@ const SafeHandling: React.FC = () => {
           textAlign: 'center'
         }}
       >
-        Essential safety procedures for coffee machine maintenance
+        Essential safety procedures for coffee machine maintenance and operation
       </Typography>
       
       <Paper 
@@ -315,13 +319,29 @@ const SafeHandling: React.FC = () => {
                   <CardContent>
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                       <WarningIcon sx={{ color: '#f59e0b', mr: 2, fontSize: 32 }} />
-                      <Box>
+                      <Box sx={{ flexGrow: 1 }}>
                         <Typography variant="h5" sx={{ color: '#1e293b', fontWeight: 700 }}>
                           {procedure.title}
                         </Typography>
                         <Typography variant="body2" sx={{ color: '#64748b' }}>
                           {procedure.description}
                         </Typography>
+                      </Box>
+                      <Box sx={{ ml: 2 }}>
+                        <Typography variant="caption" sx={{ color: '#64748b', display: 'block', textAlign: 'center', mb: 1 }}>
+                          Safety QR Code
+                        </Typography>
+                        <img 
+                          src={procedure.qrCode} 
+                          alt={`QR Code for ${procedure.title}`}
+                          style={{ 
+                            width: '80px', 
+                            height: '80px', 
+                            border: '2px solid #e2e8f0',
+                            borderRadius: '8px',
+                            backgroundColor: '#fff'
+                          }}
+                        />
                       </Box>
                     </Box>
                     

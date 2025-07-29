@@ -399,7 +399,15 @@ const ChatInterface: React.FC = () => {
   const [additionalNote, setAdditionalNote] = useState('');
   // New state for machine dropdown confirmation
   const [confirmMachine, setConfirmMachine] = useState<string>('');
-  const [machineOptionsList, setMachineOptionsList] = useState<MachineOption[]>([]);
+  
+  // Static machine options (no longer using dropdown)
+  const machineOptionsList = [
+    { machineNumber: '001', label: 'Espresso Machine #001 (Front Counter)' },
+    { machineNumber: '002', label: 'Coffee Maker #002 (Back Station)' },
+    { machineNumber: '003', label: 'Grinder #003 (Left Counter)' },
+    { machineNumber: '004', label: 'Steam Wand #004 (Right Station)' },
+    { machineNumber: '005', label: 'Bean Hopper #005 (Storage Area)' }
+  ];
   
   // ======== NEW STATE: For dynamic conversations ========
   const [conversationContext, setConversationContext] = useState<ConversationContext>({});
@@ -410,7 +418,6 @@ const ChatInterface: React.FC = () => {
   });
   const [conversationHistory, setConversationHistory] = useState<{ sender: 'user' | 'bot'; text: string; timestamp?: string }[]>([]);
   
-  const [showMachineDropdown, setShowMachineDropdown] = useState<boolean>(false);
   const [showIssueTypeButtons, setShowIssueTypeButtons] = useState<boolean>(false);
   const [currentOptions, setCurrentOptions] = useState<string[]>([]);
   const [instructions, setInstructions] = useState<Instruction[]>([]);
@@ -508,39 +515,10 @@ const ChatInterface: React.FC = () => {
     }
   }, []); // Empty dependency array = run once on mount
 
-  // Initialize machine list with demo data instead of API call
+  // Set default machine for confirmMachine
   useEffect(() => {
-    // In demo mode, use predefined coffee machine options
-    if (demoConfig.isDemo) {
-      setMachineOptionsList(demoMachineOptions);
-      if (demoMachineOptions.length > 0) {
-        setConfirmMachine(demoMachineOptions[0].machineNumber);
-      }
-    } else {
-      // Real API call for production (disabled in demo)
-      async function fetchMachines() {
-        try {
-          const res = await fetch(`${REACT_APP_API_BASE_URL}/api/resources`);
-          const data = await res.json();
-          if (data.resources) {
-            // Filter directories that are machines (exclude "origin")
-            const machineDirs = data.resources.filter((item: ResourceItem) =>
-              item.type === 'directory' && item.name && item.name.toLowerCase() !== 'origin'
-            );
-            const options: MachineOption[] = machineDirs.map((item: ResourceItem) => ({
-              machineNumber: item.name!,
-              label: item.name!
-            }));
-            setMachineOptionsList(options);
-            if (options.length > 0) {
-              setConfirmMachine(options[0].machineNumber);
-            }
-          }
-        } catch (error) {
-          console.error('Error fetching machine resources:', error);
-        }
-      }
-      fetchMachines();
+    if (machineOptionsList.length > 0) {
+      setConfirmMachine(machineOptionsList[0].machineNumber);
     }
   }, []);
 
@@ -694,69 +672,23 @@ const ChatInterface: React.FC = () => {
 
   // Add machine selection response
   const addMachineSelectionMessage = () => {
-    const machineOptions = [
-      { machineNumber: '001', label: 'Espresso Machine #001 (Front Counter)' },
-      { machineNumber: '002', label: 'Coffee Maker #002 (Back Station)' },
-      { machineNumber: '003', label: 'Grinder #003 (Left Counter)' },
-      { machineNumber: '004', label: 'Steam Wand #004 (Right Station)' },
-      { machineNumber: '005', label: 'Bean Hopper #005 (Storage Area)' }
-    ];
-    
-    setMachineOptionsList(machineOptions);
-    setShowMachineDropdown(true);
-    
+    // Skip machine selection dropdown, go directly to issue types
     addBotMessage(
-      "I can help you with that! First, which coffee machine are you working with today? Please select from the dropdown below:",
+      "I can help you with that! What type of issue are you experiencing with your coffee equipment?",
       [],
       [],
       [],
-      []
+      [
+        "Machine won't start",
+        "Poor coffee quality",
+        "Water/Steam issues", 
+        "Unusual sounds",
+        "Error messages",
+        "Regular maintenance"
+      ]
     );
-  };
-
-  // Handle machine selection
-  const handleMachineSelection = (machineNumber: string) => {
-    const selectedMachine = machineOptionsList.find(m => m.machineNumber === machineNumber);
-    if (selectedMachine) {
-      setConversationContext(prev => ({ ...prev, selectedMachine: machineNumber }));
-      
-      // Update OpenAI context with selected machine
-      setOpenAIContext(prev => ({
-        ...prev,
-        selectedMachine: machineNumber
-      }));
-      
-      setShowMachineDropdown(false);
-      
-      // Add user message showing selection
-      setMessages(prev => [...prev, {
-        sender: 'user',
-        text: `Selected: ${selectedMachine.label}`
-      }]);
-      
-      // Update conversation history
-      setConversationHistory(prev => [...prev, {
-        sender: 'user',
-        text: `Selected: ${selectedMachine.label}`,
-        timestamp: new Date().toISOString()
-      }]);
-      
-      // Continue with issue type selection
-      addBotMessage(
-        `Great! You've selected ${selectedMachine.label}. What type of issue are you experiencing?`,
-        [],
-        [],
-        [],
-        [
-          'Machine won\'t start',
-          'Poor coffee quality',
-          'Water/steam issues',
-          'Strange noises',
-          'Error messages',
-          'Routine maintenance'
-        ]
-      );
-    }
+    
+    setShowIssueTypeButtons(true);
   };
 
   // Handle issue type selection
@@ -2266,7 +2198,6 @@ Comments: ${wo.comments}`;
     
     setActiveWorkOrder(null);
     setTroubleshootingStep(0);
-    setShowMachineDropdown(false);
     setShowIssueTypeButtons(false);
     setCurrentOptions([]);
     addBotMessage(t('chat.flowReset'));
@@ -3225,50 +3156,6 @@ Comments: ${wo.comments}`;
 
       {/* ======== DYNAMIC CONVERSATION UI COMPONENTS ======== */}
       
-      {/* Machine Selection Dropdown */}
-      {showMachineDropdown && (
-        <Box sx={{ 
-          width: { xs: '90%', md: '600px' }, 
-          mb: 3,
-          background: 'rgba(255, 255, 255, 0.95)',
-          backdropFilter: 'blur(20px)',
-          border: '1px solid rgba(148, 163, 184, 0.2)',
-          borderRadius: '16px',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-          p: 3
-        }}>
-          <Typography variant="h6" gutterBottom sx={{ color: '#1e293b', fontWeight: 600 }}>
-            {t('chatInterface.selectCoffeeMachine')}
-          </Typography>
-          <FormControl fullWidth>
-            <InputLabel>{t('chatInterface.machineLabel')}</InputLabel>
-            <Select
-              value=""
-              onChange={(e) => handleMachineSelection(e.target.value)}
-              sx={{
-                background: 'rgba(248, 250, 252, 0.8)',
-                borderRadius: '12px',
-                '& .MuiOutlinedInput-notchedOutline': {
-                  border: '1px solid rgba(148, 163, 184, 0.3)',
-                },
-                '&:hover .MuiOutlinedInput-notchedOutline': {
-                  border: '1px solid rgba(59, 130, 246, 0.5)',
-                },
-                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                  border: '1px solid rgba(59, 130, 246, 0.7)',
-                }
-              }}
-            >
-              {machineOptionsList.map((machine) => (
-                <MenuItem key={machine.machineNumber} value={machine.machineNumber}>
-                  {machine.label}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Box>
-      )}
-
       {/* Issue Type Selection Buttons */}
       {showIssueTypeButtons && (
         <Box sx={{ 
