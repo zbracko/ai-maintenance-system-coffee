@@ -11,30 +11,50 @@ import { configService } from '../services/configService';
 
 // OpenAI Configuration with runtime environment variable fetching
 const getOpenAIKey = (): string => {
+  // Helper function to validate API key value
+  const isValidApiKey = (key: any): boolean => {
+    return key && 
+           typeof key === 'string' && 
+           key !== 'false' && 
+           key !== 'undefined' && 
+           key !== 'null' && 
+           key !== '' && 
+           key !== 'your-openai-api-key-here' &&
+           key.length > 10;
+  };
+
   // Try Vite environment variable first (build-time)
-  if (import.meta.env.VITE_OPENAI_API_KEY) {
-    return import.meta.env.VITE_OPENAI_API_KEY;
+  const viteKey = import.meta.env.VITE_OPENAI_API_KEY;
+  if (isValidApiKey(viteKey)) {
+    console.log('🔑 Using build-time VITE_OPENAI_API_KEY');
+    return viteKey;
   }
   
-  // For Amplify: Try to fetch from a runtime configuration endpoint
-  // This is a fallback that can be implemented if build-time injection fails
-  
-  // Fallback: Try to get from window.ENV_CONFIG (runtime - Amplify injection)
-  if (typeof window !== 'undefined' && (window as any).ENV_CONFIG?.VITE_OPENAI_API_KEY) {
-    return (window as any).ENV_CONFIG.VITE_OPENAI_API_KEY;
+  // For Amplify: Try to get from window.ENV_CONFIG (runtime - Amplify injection)
+  if (typeof window !== 'undefined') {
+    const envConfigKey = (window as any).ENV_CONFIG?.VITE_OPENAI_API_KEY;
+    if (isValidApiKey(envConfigKey)) {
+      console.log('🔑 Using runtime ENV_CONFIG.VITE_OPENAI_API_KEY');
+      return envConfigKey;
+    }
+    
+    // Fallback: Try to get from window object directly (runtime - Amplify can inject this)
+    const windowKey = (window as any).VITE_OPENAI_API_KEY;
+    if (isValidApiKey(windowKey)) {
+      console.log('🔑 Using runtime window.VITE_OPENAI_API_KEY');
+      return windowKey;
+    }
+    
+    // Fallback: Try alternate environment variable names for compatibility
+    const reactKey = (window as any).REACT_APP_OPENAI_API_KEY;
+    if (isValidApiKey(reactKey)) {
+      console.log('🔑 Using runtime window.REACT_APP_OPENAI_API_KEY');
+      return reactKey;
+    }
   }
   
-  // Fallback: Try to get from window object directly (runtime - Amplify can inject this)
-  if (typeof window !== 'undefined' && (window as any).VITE_OPENAI_API_KEY) {
-    return (window as any).VITE_OPENAI_API_KEY;
-  }
-  
-  // Fallback: Try alternate environment variable names for compatibility
-  if (typeof window !== 'undefined' && (window as any).REACT_APP_OPENAI_API_KEY) {
-    return (window as any).REACT_APP_OPENAI_API_KEY;
-  }
-  
-  // Final fallback: Return a placeholder that indicates we should use demo mode
+  // Final fallback: Return empty string to indicate we should use demo mode
+  console.log('🔑 No valid API key found, will use demo mode');
   return '';
 };
 
@@ -47,19 +67,23 @@ const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 console.log('🌍 Environment Variables Debug (Comprehensive):');
 console.log(`   - NODE_ENV: ${import.meta.env.MODE}`);
 console.log(`   - Build-time VITE vars:`, Object.keys(import.meta.env).filter(key => key.startsWith('VITE_')));
-console.log(`   - import.meta.env.VITE_OPENAI_API_KEY: ${!!import.meta.env.VITE_OPENAI_API_KEY}`);
+console.log(`   - import.meta.env.VITE_OPENAI_API_KEY: ${import.meta.env.VITE_OPENAI_API_KEY} (type: ${typeof import.meta.env.VITE_OPENAI_API_KEY})`);
 
 if (typeof window !== 'undefined') {
   console.log(`   - window.ENV_CONFIG exists: ${!!(window as any).ENV_CONFIG}`);
   console.log(`   - window.ENV_CONFIG content:`, (window as any).ENV_CONFIG);
-  console.log(`   - window.VITE_OPENAI_API_KEY: ${!!(window as any).VITE_OPENAI_API_KEY}`);
-  console.log(`   - window.REACT_APP_OPENAI_API_KEY: ${!!(window as any).REACT_APP_OPENAI_API_KEY}`);
+  console.log(`   - window.VITE_OPENAI_API_KEY: ${(window as any).VITE_OPENAI_API_KEY} (type: ${typeof (window as any).VITE_OPENAI_API_KEY})`);
+  console.log(`   - window.REACT_APP_OPENAI_API_KEY: ${(window as any).REACT_APP_OPENAI_API_KEY} (type: ${typeof (window as any).REACT_APP_OPENAI_API_KEY})`);
   
   // Check all window properties that might contain our API key
   const windowKeys = Object.keys(window).filter(key => 
     key.includes('OPENAI') || key.includes('VITE_') || key.includes('REACT_APP_')
   );
   console.log(`   - All window keys with OPENAI/VITE_/REACT_APP_:`, windowKeys);
+  
+  // Show environment variables array from Amplify debug
+  const envVars = Object.keys(import.meta.env);
+  console.log(`   - Environment variables loaded:`, envVars.filter(key => key.includes('OPENAI') || key.includes('VITE_')));
 }
 
 console.log(`   - Final API key source: ${OPENAI_API_KEY ? 'Found (' + OPENAI_API_KEY.length + ' chars)' : 'Not found'}`);
@@ -243,12 +267,25 @@ export const getOpenAIResponse = async (
     }
   }
   
+  // Helper function to validate API key (consistent with getOpenAIKey)
+  const isValidApiKey = (key: any): boolean => {
+    return key && 
+           typeof key === 'string' && 
+           key !== 'false' && 
+           key !== 'undefined' && 
+           key !== 'null' && 
+           key !== '' && 
+           key !== 'your-openai-api-key-here' &&
+           key.length > 10;
+  };
+  
   // Try OpenAI first - only fall back to demo if explicitly disabled or if there's an error
-  const shouldUseOpenAI = apiKey && apiKey !== 'your-openai-api-key-here' && apiKey.length > 10;
+  const shouldUseOpenAI = isValidApiKey(apiKey);
   
   console.log('🔍 OpenAI Validation Details:');
   console.log(`   - API Key exists: ${!!apiKey}`);
   console.log(`   - API Key not placeholder: ${apiKey !== 'your-openai-api-key-here'}`);
+  console.log(`   - API Key not "false": ${apiKey !== 'false'}`);
   console.log(`   - API Key length > 10: ${apiKey?.length > 10} (actual length: ${apiKey?.length || 0})`);
   console.log(`   - Should use OpenAI: ${shouldUseOpenAI}`);
   
