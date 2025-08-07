@@ -356,12 +356,18 @@ const MainPanel: React.FC = () => {
   const [previewContent, setPreviewContent] = useState<{ type: 'svg' | 'video', path: string, name: string } | null>(null);
 
   // QR Codes
+  const [qrCodeType, setQrCodeType] = useState<'machine' | 'safety'>('machine');
   const [qrMachineModel, setQrMachineModel] = useState<string>('');
   const [qrMachineNumber, setQrMachineNumber] = useState<string>('');
+  const [qrSafetyType, setQrSafetyType] = useState<string>('');
+  const [qrSafetyStep, setQrSafetyStep] = useState<string>('');
   const [qrLocation, setQrLocation] = useState<string>('');
   const [qrCodes, setQrCodes] = useState<Array<{
-    machineModel: string;
-    machineNumber: string;
+    type: 'machine' | 'safety';
+    machineModel?: string;
+    machineNumber?: string;
+    safetyType?: string;
+    safetyStep?: string;
     location: string;
     data: string;
     filePath?: string;
@@ -456,7 +462,31 @@ const MainPanel: React.FC = () => {
   ]);
 
   const [customSafetySections, setCustomSafetySections] = useState([
-    // Array to store custom safety sections with their own checks
+    // Demo custom safety sections
+    { 
+      id: 'chemical-handling', 
+      name: 'Chemical Handling Procedures', 
+      icon: '☠️', 
+      type: 'safety',
+      description: 'Specialized procedures for handling cleaning chemicals and descaling solutions',
+      checks: []
+    },
+    { 
+      id: 'emergency-response', 
+      name: 'Emergency Response Protocol', 
+      icon: '🚨', 
+      type: 'safety',
+      description: 'Emergency procedures for equipment failures and safety incidents',
+      checks: []
+    },
+    { 
+      id: 'maintenance-tools', 
+      name: 'Tool Safety Guidelines', 
+      icon: '🔧', 
+      type: 'safety',
+      description: 'Proper use and handling of maintenance tools and equipment',
+      checks: []
+    }
   ]);
 
   // Safety check dialog states
@@ -1679,33 +1709,72 @@ See main parts catalog for complete listings and pricing.
 
   /** QR Codes tab */
   const handleGenerateQRCode = async () => {
-    if (!qrMachineModel || !qrMachineNumber || !qrLocation) {
-      alert("Please fill out model, machine #, and location.");
-      return;
+    // Validation based on QR code type
+    if (qrCodeType === 'machine') {
+      if (!qrMachineModel || !qrMachineNumber || !qrLocation) {
+        alert("Please fill out machine model, machine number, and location.");
+        return;
+      }
+    } else {
+      if (!qrSafetyType || !qrSafetyStep || !qrLocation) {
+        alert("Please fill out safety type, safety step, and location.");
+        return;
+      }
     }
     
     if (demoConfig.isDemo) {
       // Demo mode: Generate QR code locally
-      const demoQrData = `coffee-machine://${qrMachineModel}/${qrMachineNumber}?location=${encodeURIComponent(qrLocation)}`;
-      const newQr = {
-        machineModel: qrMachineModel,
-        machineNumber: qrMachineNumber,
-        location: qrLocation,
-        data: demoQrData,
-        filePath: `demo/qr_codes/${qrMachineModel}_${qrMachineNumber}.png`
+      let demoQrData = '';
+      let newQr: any = {
+        type: qrCodeType,
+        location: qrLocation
       };
+
+      if (qrCodeType === 'machine') {
+        demoQrData = `coffee-machine://${qrMachineModel}/${qrMachineNumber}?location=${encodeURIComponent(qrLocation)}`;
+        newQr = {
+          ...newQr,
+          machineModel: qrMachineModel,
+          machineNumber: qrMachineNumber,
+          data: demoQrData,
+          filePath: `demo/qr_codes/${qrMachineModel}_${qrMachineNumber}.png`
+        };
+      } else {
+        demoQrData = `coffee-safety://${qrSafetyType}/${qrSafetyStep}?location=${encodeURIComponent(qrLocation)}`;
+        newQr = {
+          ...newQr,
+          safetyType: qrSafetyType,
+          safetyStep: qrSafetyStep,
+          data: demoQrData,
+          filePath: `demo/qr_codes/safety_${qrSafetyType}_${qrSafetyStep}.png`
+        };
+      }
+
       setQrCodes([...qrCodes, newQr]);
+      
+      // Reset form
       setQrMachineModel('');
       setQrMachineNumber('');
+      setQrSafetyType('');
+      setQrSafetyStep('');
       setQrLocation('');
     } else {
       // Real API call for production
       try {
-        const body = {
-          machineModel: qrMachineModel,
-          machineNumber: qrMachineNumber,
-          location: qrLocation
-        };
+        const body = qrCodeType === 'machine' 
+          ? {
+              type: 'machine',
+              machineModel: qrMachineModel,
+              machineNumber: qrMachineNumber,
+              location: qrLocation
+            }
+          : {
+              type: 'safety',
+              safetyType: qrSafetyType,
+              safetyStep: qrSafetyStep,
+              location: qrLocation
+            };
+            
         const resp = await fetch(`${API_BASE_URL}/api/saveQRCode`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1715,16 +1784,30 @@ See main parts catalog for complete listings and pricing.
         if (result.error) {
           alert(result.error);
         } else {
-          const newQr = {
-            machineModel: qrMachineModel,
-            machineNumber: qrMachineNumber,
-            location: qrLocation,
-            data: result.embeddedUrl,
-            filePath: result.filePath
-          };
+          const newQr = qrCodeType === 'machine' 
+            ? {
+                type: 'machine' as const,
+                machineModel: qrMachineModel,
+                machineNumber: qrMachineNumber,
+                location: qrLocation,
+                data: result.embeddedUrl,
+                filePath: result.filePath
+              }
+            : {
+                type: 'safety' as const,
+                safetyType: qrSafetyType,
+                safetyStep: qrSafetyStep,
+                location: qrLocation,
+                data: result.embeddedUrl,
+                filePath: result.filePath
+              };
           setQrCodes([...qrCodes, newQr]);
+          
+          // Reset form
           setQrMachineModel('');
           setQrMachineNumber('');
+          setQrSafetyType('');
+          setQrSafetyStep('');
           setQrLocation('');
         }
       } catch (err) {
@@ -2042,6 +2125,7 @@ See main parts catalog for complete listings and pricing.
       name: newSection.name.trim(),
       description: newSection.description.trim(),
       icon: '🔧',
+      type: newSection.type,
       checks: [] // Empty array for safety checks in this section
     };
 
@@ -3092,23 +3176,104 @@ See main parts catalog for complete listings and pricing.
           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
         }}>
           <Typography variant="h6" gutterBottom sx={{ color: 'rgba(30, 41, 59, 0.9)', fontWeight: 700 }}>
-            ☕ Coffee Machine QR Code Generator
+            ☕ QR Code Generator
           </Typography>
+          
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, maxWidth: 400 }}>
+            {/* QR Code Type Selection */}
             <FormControl fullWidth>
-              <InputLabel>Machine Model</InputLabel>
-              <Select value={qrMachineModel} label="Machine Model" onChange={e => setQrMachineModel(e.target.value as string)}>
-                {machineModels.map((m, i) => (
-                  <MenuItem key={i} value={m}>{m}</MenuItem>
-                ))}
+              <InputLabel>QR Code Type</InputLabel>
+              <Select 
+                value={qrCodeType} 
+                label="QR Code Type" 
+                onChange={e => {
+                  setQrCodeType(e.target.value as 'machine' | 'safety');
+                  // Reset form when switching types
+                  setQrMachineModel('');
+                  setQrMachineNumber('');
+                  setQrSafetyType('');
+                  setQrSafetyStep('');
+                  setQrLocation('');
+                }}
+              >
+                <MenuItem value="machine">🔧 Coffee Machine</MenuItem>
+                <MenuItem value="safety">🛡️ Safety Procedure</MenuItem>
               </Select>
             </FormControl>
-            <TextField label="Machine Number" value={qrMachineNumber} onChange={e => setQrMachineNumber(e.target.value)} />
-            <TextField label="Location" value={qrLocation} onChange={e => setQrLocation(e.target.value)} />
-            <Button variant="contained" onClick={handleGenerateQRCode}>
-              Generate QR Code
+
+            {/* Machine-specific fields */}
+            {qrCodeType === 'machine' && (
+              <>
+                <FormControl fullWidth>
+                  <InputLabel>Machine Model</InputLabel>
+                  <Select value={qrMachineModel} label="Machine Model" onChange={e => setQrMachineModel(e.target.value as string)}>
+                    {machineModels.map((m, i) => (
+                      <MenuItem key={i} value={m}>{m}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                <TextField 
+                  label="Machine Number" 
+                  value={qrMachineNumber} 
+                  onChange={e => setQrMachineNumber(e.target.value)}
+                  placeholder="e.g., CM-2000-001"
+                />
+              </>
+            )}
+
+            {/* Safety-specific fields */}
+            {qrCodeType === 'safety' && (
+              <>
+                <FormControl fullWidth>
+                  <InputLabel>Safety Category</InputLabel>
+                  <Select value={qrSafetyType} label="Safety Category" onChange={e => setQrSafetyType(e.target.value as string)}>
+                    <MenuItem value="general">🦺 General Safety</MenuItem>
+                    <MenuItem value="grinder">⚙️ Grinder Safety</MenuItem>
+                    <MenuItem value="custom">🔧 Custom Safety</MenuItem>
+                  </Select>
+                </FormControl>
+                
+                {qrSafetyType && (
+                  <FormControl fullWidth>
+                    <InputLabel>Safety Step</InputLabel>
+                    <Select value={qrSafetyStep} label="Safety Step" onChange={e => setQrSafetyStep(e.target.value as string)}>
+                      {qrSafetyType === 'general' && generalSafetyChecks.map((check) => (
+                        <MenuItem key={check.id} value={check.id}>{check.icon} {check.label}</MenuItem>
+                      ))}
+                      {qrSafetyType === 'grinder' && grinderSafetyChecks.map((check) => (
+                        <MenuItem key={check.id} value={check.id}>{check.icon} {check.label}</MenuItem>
+                      ))}
+                      {qrSafetyType === 'custom' && customSafetySections.map((section) => (
+                        <MenuItem key={section.id} value={section.id}>{section.icon} {section.name}</MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                )}
+              </>
+            )}
+
+            <TextField 
+              label="Location" 
+              value={qrLocation} 
+              onChange={e => setQrLocation(e.target.value)}
+              placeholder="e.g., Main Cafe Counter, Service Area"
+            />
+            
+            <Button 
+              variant="contained" 
+              onClick={handleGenerateQRCode}
+              startIcon={qrCodeType === 'machine' ? '🔧' : '🛡️'}
+              sx={{ 
+                backgroundColor: qrCodeType === 'machine' ? 'rgba(34, 197, 94, 0.9)' : 'rgba(249, 115, 22, 0.9)',
+                '&:hover': {
+                  backgroundColor: qrCodeType === 'machine' ? 'rgba(34, 197, 94, 1)' : 'rgba(249, 115, 22, 1)'
+                }
+              }}
+            >
+              Generate {qrCodeType === 'machine' ? 'Machine' : 'Safety'} QR Code
             </Button>
           </Box>
+          
           <Box sx={{ mt: 2 }}>
             <Typography variant="subtitle1" sx={{ color: 'rgba(30, 41, 59, 0.8)', fontWeight: 600 }}>
               Generated QR Codes
@@ -3124,7 +3289,10 @@ See main parts catalog for complete listings and pricing.
                 boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)'
               }}>
                 <Typography variant="body2" sx={{ color: 'rgba(30, 41, 59, 0.8)' }}>
-                  Model: {qr.machineModel}, Number: {qr.machineNumber}, Loc: {qr.location}
+                  {qr.type === 'machine' 
+                    ? `🔧 Machine: ${qr.machineModel} - ${qr.machineNumber}` 
+                    : `🛡️ Safety: ${qr.safetyType} - ${qr.safetyStep}`
+                  }, Location: {qr.location}
                 </Typography>
                 <Typography variant="caption" display="block" sx={{ color: 'rgba(30, 41, 59, 0.6)' }}>
                   Embedded URL: {qr.data}
