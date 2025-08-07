@@ -160,6 +160,8 @@ interface Message {
   mediaMeta?: {
     images?: { src: string; alt?: string; priority?: number; }[];
     videos?: { src: string; poster?: string; caption?: string; priority?: number; }[];
+  // Grouping key for clustering related media (e.g. same procedure)
+  groups?: { key: string; images: string[]; videos: string[] }[];
   };
 }
 
@@ -819,24 +821,65 @@ const ChatInterface: React.FC = () => {
     console.log('   - videos:', videos);
     
     // Build provisional metadata (alt text derived from filename, priority by order)
-    const imageMeta = images?.map((src, idx) => ({
-      src: src.startsWith('/') ? src : `/${src}`,
-      alt: src.split('/').pop()?.replace(/[-_]/g, ' ').replace(/\.[^.]+$/, ''),
+    // Helper to normalize path
+    const norm = (p: string) => p.startsWith('/') ? p : `/${p}`;
+    // Basic similarity scoring for dedupe (filename stem Levenshtein-lite)
+    const stem = (p: string) => p.split('/').pop()?.replace(/\.[^.]+$/, '') || p;
+    const similar = (a: string, b: string) => {
+      const s1 = stem(a).toLowerCase();
+      const s2 = stem(b).toLowerCase();
+      if (s1 === s2) return true;
+      // crude distance: count differing chars up to min length
+      const len = Math.min(s1.length, s2.length);
+      let diff = 0;
+      for (let i=0;i<len;i++) if (s1[i] !== s2[i]) diff++;
+      const ratio = diff / len;
+      return ratio < 0.3 && Math.abs(s1.length - s2.length) < 5;
+    };
+    const dedupe = (arr?: string[]) => {
+      if (!arr) return [] as string[];
+      const out: string[] = [];
+      arr.forEach(c => { if (!out.some(o => similar(o, c))) out.push(c); });
+      return out;
+    };
+    const refinedImages = dedupe(images);
+    const refinedVideos = dedupe(videos);
+    // Build alt text enrichment using message text keywords
+    const keyWords = text.toLowerCase().split(/[^a-z0-9]+/).filter(w => w.length>3);
+    const enrichAlt = (base: string) => {
+      const baseAlt = base.split('/').pop()?.replace(/[-_]/g,' ').replace(/\.[^.]+$/,'') || 'image';
+      const hits = keyWords.filter(k => baseAlt.includes(k)).slice(0,3);
+      return hits.length ? `${baseAlt} (${hits.join(', ')})` : baseAlt;
+    };
+    const imageMeta = refinedImages.map((src, idx) => ({
+      src: norm(src),
+      alt: enrichAlt(src),
       priority: idx
     }));
-    const videoMeta = videos?.map((src, idx) => ({
-      src: src.startsWith('/') ? src : `/${src}`,
-      caption: src.split('/').pop()?.replace(/[-_]/g, ' ').replace(/\.[^.]+$/, ''),
+    const videoMeta = refinedVideos.map((src, idx) => ({
+      src: norm(src),
+      caption: stem(src).replace(/[-_]/g,' '),
       priority: idx
     }));
+    // Grouping: cluster by first two path segments or file stem prefix before first dash/underscore
+    const groupMap: Record<string, { images: string[]; videos: string[] }> = {};
+    const groupKey = (p: string) => {
+      const parts = p.split('/').filter(Boolean);
+      const file = stem(p);
+      const prefix = file.split(/[-_]/)[0];
+      return parts.slice(0,2).join('/') + '::' + prefix;
+    };
+    refinedImages.forEach(p => { const k = groupKey(p); (groupMap[k]||(groupMap[k]={images:[],videos:[]})).images.push(norm(p)); });
+    refinedVideos.forEach(p => { const k = groupKey(p); (groupMap[k]||(groupMap[k]={images:[],videos:[]})).videos.push(norm(p)); });
+    const groups = Object.entries(groupMap).map(([key,val])=>({ key, images: val.images, videos: val.videos }));
 
     const message: Message = {
       sender: 'bot',
       text,
-      images,
-      videos,
-      instructions,
-      mediaMeta: (imageMeta || videoMeta) ? { images: imageMeta, videos: videoMeta } : undefined
+  images: refinedImages,
+  videos: refinedVideos,
+  instructions,
+  mediaMeta: (imageMeta.length || videoMeta.length) ? { images: imageMeta, videos: videoMeta, groups } : undefined
     };
     
     console.log('🎬 Created message object:', {
@@ -3079,108 +3122,78 @@ Comments: ${wo.comments}`;
                         >
                           {msg.text}
                         </Typography>
-                        {msg.images?.length && (
+                        {(msg.mediaMeta?.images?.length || msg.images?.length) && (
                           <Box mt={2}>
-                            {/* TODO: Replace Slider with responsive grid when mediaMeta present for richer layout & lazy loading */}
-                            <Slider {...sliderSettings} ref={sliderRef}>
-                              {msg.images.map((img, idx) => (
-                                <Box key={idx} textAlign="center">
-                                  {/* Display actual images - check for asset paths or any image extensions */}
-                                  {(img.startsWith('/assets/') || 
-                                    img.startsWith('assets/') || 
-                                    img.includes('.png') || 
-                                    img.includes('.jpg') || 
-                                    img.includes('.jpeg') || 
-                                    img.includes('.svg') || 
-                                    img.includes('.gif') || 
-                                    img.includes('.webp')) ? (
-                                    <Box
-                                      component="img"
-                                      src={img.startsWith('/') ? img : `/${img}`}
-                                      alt={`Maintenance Image ${idx + 1}`}
-                                      sx={{
-                                        width: '100%',
-                                        height: '300px',
-                                        objectFit: 'contain',
-                                        backgroundColor: '#f8fafc',
-                                        border: '1px solid #e2e8f0',
-                                        borderRadius: '8px',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.3s ease',
-                                        '&:hover': {
-                                          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                                          transform: 'scale(1.02)'
-                                        }
-                                      }}
-                                      onClick={() => handleImageClick(img)}
-                                      onError={(e) => {
-                                        // Enhanced debugging for image loading issues
-                                        console.error('Failed to load image:', img);
-                                        console.error('Error details:', e.currentTarget.src);
-                                        
-                                        // Fallback to placeholder if image fails to load
-                                        e.currentTarget.style.display = 'none';
-                                        e.currentTarget.parentElement.innerHTML = `
-                                          <div style="
-                                            width: 100%;
-                                            height: 300px;
-                                            background-color: #f1f5f9;
-                                            border: 2px dashed #cbd5e1;
-                                            border-radius: 8px;
-                                            display: flex;
-                                            flex-direction: column;
-                                            align-items: center;
-                                            justify-content: center;
-                                            cursor: pointer;
-                                          ">
-                                            <span style="font-size: 48px; color: #64748b; margin-bottom: 8px;">📸</span>
-                                            <span style="font-size: 14px; color: #64748b; font-weight: 500;">Image not available</span>
-                                            <span style="font-size: 12px; color: #64748b; margin-top: 4px;">${img}</span>
-                                            <span style="font-size: 10px; color: #ef4444; margin-top: 4px;">Check console for details</span>
-                                          </div>
-                                        `;
-                                      }}
-                                      onLoad={(e) => {
-                                        // Success logging for debugging
-                                        console.log('Successfully loaded image:', img);
-                                      }}
-                                    />
-                                  ) : (
-                                    <Box
-                                      sx={{
-                                        width: '100%',
-                                        height: '300px',
-                                        backgroundColor: '#f1f5f9',
-                                        border: '2px dashed #cbd5e1',
-                                        borderRadius: '8px',
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.3s ease',
-                                        '&:hover': {
-                                          backgroundColor: '#e2e8f0',
-                                          borderColor: '#94a3b8'
-                                        }
-                                      }}
-                                      onClick={() => handleImageClick(img)}
-                                    >
-                                      <PhotoCameraIcon sx={{ fontSize: 48, color: '#64748b', mb: 1 }} />
-                                      <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 500 }}>
-                                        📸 Demo Image Placeholder
-                                      </Typography>
-                                      <Typography variant="caption" color="textSecondary" sx={{ mt: 0.5 }}>
-                                        {img}
-                                      </Typography>
-                                    </Box>
+                            <Box sx={{
+                              display: 'grid',
+                              gap: 2,
+                              gridTemplateColumns: {
+                                xs: 'repeat(1, 1fr)',
+                                sm: 'repeat(min(2, var(--img-count)), 1fr)',
+                                md: 'repeat(min(3, var(--img-count)), 1fr)'
+                              },
+                              '--img-count': (msg.mediaMeta?.images?.length || msg.images?.length || 1) as any
+                            }}>
+                              {(msg.mediaMeta?.images || msg.images?.map(src => ({ src }))).map((im: any, idx: number) => (
+                                <Box key={idx} sx={{ position: 'relative' }}>
+                                  <Box
+                                    component="img"
+                                    loading="lazy"
+                                    src={im.src.startsWith('/') ? im.src : `/${im.src}`}
+                                    alt={im.alt || `Image ${idx + 1}`}
+                                    onClick={() => handleImageClick(im.src)}
+                                    onError={(e) => { console.error('Image load error:', im.src); e.currentTarget.style.display='none'; }}
+                                    sx={{
+                                      width: '100%',
+                                      height: 220,
+                                      objectFit: 'contain',
+                                      backgroundColor: '#f8fafc',
+                                      border: '1px solid #e2e8f0',
+                                      borderRadius: 2,
+                                      p: 1,
+                                      cursor: 'zoom-in',
+                                      transition: 'all .25s ease',
+                                      '&:hover': { boxShadow: '0 4px 18px rgba(0,0,0,0.12)', transform: 'translateY(-2px)' }
+                                    }}
+                                  />
+                                  {im.alt && (
+                                    <Typography variant="caption" sx={{ mt: 0.5, display: 'block', textAlign: 'center', color: '#475569' }}>
+                                      {im.alt}
+                                    </Typography>
                                   )}
                                 </Box>
                               ))}
-                            </Slider>
+                            </Box>
                           </Box>
                         )}
-                        {msg.videos?.map((vid, idx) => {
+                        {msg.mediaMeta?.videos?.length ? msg.mediaMeta.videos.map((vm, idx) => {
+                          const vid = vm.src;
+                          return (
+                            <Box key={idx} mt={2}>
+                              <Box sx={{
+                                width: '100%',
+                                backgroundColor: '#f8fafc',
+                                border: '1px solid #e2e8f0',
+                                borderRadius: '12px',
+                                overflow: 'hidden',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                                transition: 'all .3s ease',
+                                '&:hover': { boxShadow: '0 8px 24px rgba(0,0,0,0.12)' }
+                              }}>
+                                <video controls preload="metadata" style={{ width: '100%', maxHeight: 380, display:'block', background:'#000' }}
+                                  onError={(e)=>{ console.error('Video load error:', vid); (e.currentTarget as any).style.display='none'; }}>
+                                  <source src={vid} />
+                                  Your browser does not support the video tag.
+                                </video>
+                                <Box sx={{ p: 1.5 }}>
+                                  <Typography variant="body2" sx={{ fontWeight:600, color:'#1e293b' }}>
+                                    {vm.caption || 'Maintenance Video'}
+                                  </Typography>
+                                </Box>
+                              </Box>
+                            </Box>
+                          );
+                        }) : msg.videos?.map((vid, idx) => {
                           console.log('Processing video:', vid, 'for message:', msg.text.substring(0, 50));
                           return (
                             <Box key={idx} mt={2}>

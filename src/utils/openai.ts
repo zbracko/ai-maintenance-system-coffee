@@ -9,6 +9,63 @@ import { demoWorkOrders, demoPastLogs, demoMachineOptions, demoChatResponses } f
 import { demoConfig } from '../config/demoConfig';
 import { configService } from '../services/configService';
 
+// Known media index to map AI mentions to real asset paths
+const KNOWN_IMAGE_INDEX: Record<string, string> = {
+  'coffee-grinder-operation': '/assets/coffee-grinder-operation.svg',
+  'espresso-machine-cleaning': '/assets/espresso-machine-cleaning.svg',
+  'steam-wand-cleaning': '/assets/steam-wand-cleaning.svg',
+  'steam-wand-blockage': '/assets/steam-wand-blockage.svg',
+  'water-filter-replacement': '/assets/water-filter-replacement.svg',
+  'brewing-chamber-cleaning': '/assets/brewing-chamber-cleaning.svg',
+  'grinder-jam-clearing': '/assets/grinder-jam-clearing.svg',
+  'troubleshooting-guide': '/assets/troubleshooting-guide.svg'
+};
+
+const KNOWN_VIDEO_INDEX: Record<string, string> = {
+  'coffee_machine_filter_replacement_video': '/assets/Coffee_Machine_Filter_Replacement_Video.mp4',
+  'cleaning_grinder': '/assets/Cleaning_Grinder.mp4'
+};
+
+const KEYWORD_TO_MEDIA: Array<{ keywords: RegExp; images?: string[]; videos?: string[] }> = [
+  { keywords: /(filter|cartridge).*replac/i, images: ['/assets/water-filter-replacement.svg'], videos: ['/assets/Coffee_Machine_Filter_Replacement_Video.mp4'] },
+  { keywords: /(steam).*wand|no steam|blocked wand/i, images: ['/assets/steam-wand-cleaning.svg', '/assets/steam-wand-blockage.svg'] },
+  { keywords: /(grinder|burr).*clean|clean.*grinder/i, images: ['/assets/coffee-grinder-operation.svg'], videos: ['/assets/Cleaning_Grinder.mp4'] },
+  { keywords: /(brew|brewing).*clean/i, images: ['/assets/brewing-chamber-cleaning.svg'] },
+  { keywords: /(troubleshoot|guide|steps)/i, images: ['/assets/troubleshooting-guide.svg'] }
+];
+
+const extractKeywords = (text: string): string[] =>
+  Array.from(new Set(
+    text.toLowerCase()
+      .replace(/[^a-z0-9_\-\s]/g, ' ')
+      .split(/\s+/)
+      .filter(w => w.length > 3 && w.length < 30)
+  ));
+
+const inferMediaFromAIText = (aiText: string): { images: string[]; videos: string[] } => {
+  const images: string[] = [];
+  const videos: string[] = [];
+  const lower = aiText.toLowerCase();
+
+  // Direct basename mentions (e.g., "steam-wand-cleaning")
+  Object.entries(KNOWN_IMAGE_INDEX).forEach(([base, path]) => {
+    if (lower.includes(base)) images.push(path);
+  });
+  Object.entries(KNOWN_VIDEO_INDEX).forEach(([base, path]) => {
+    if (lower.includes(base)) videos.push(path);
+  });
+
+  // Keyword rules
+  KEYWORD_TO_MEDIA.forEach(rule => {
+    if (rule.keywords.test(lower)) {
+      if (rule.images) images.push(...rule.images);
+      if (rule.videos) videos.push(...rule.videos);
+    }
+  });
+
+  return { images: Array.from(new Set(images)), videos: Array.from(new Set(videos)) };
+};
+
 /**
  * Simple language detection for demo responses
  */
@@ -470,6 +527,10 @@ export interface ContextualResponse {
   videos?: string[];
   requiresAction?: boolean;
   nextStep?: string;
+  mediaMeta?: {
+    images?: { src: string; alt?: string; }[];
+    videos?: { src: string; caption?: string; poster?: string; }[];
+  };
 }
 
 /**
@@ -689,29 +750,35 @@ export const getOpenAIResponse = async (
       
       console.log('✅ OpenAI response received successfully');
       
-      // Intelligent image detection based on user message and AI response
-      const shouldIncludeImages = detectImageNeed(userMessage, context);
+      // Extract additional images and videos from the AI response and infer likely assets
+      const { cleanText, images: responseImages /* imageMeta */ } = parseResponseForMedia(aiText);
+      const responseVideos = extractVideosFromResponse(aiText);
+      const inferred = inferMediaFromAIText(aiText);
+      
+      // Decide inclusion based on user and AI signals
+      const shouldIncludeImages = detectImageNeed(userMessage, context)
+        || responseImages.length > 0
+        || responseVideos.length > 0
+        || inferred.images.length > 0
+        || inferred.videos.length > 0
+        || /see|shown|refer|as illustrated|diagram|figure|video/i.test(aiText);
       const contextualImages = shouldIncludeImages ? getRelevantImages(userMessage, context) : [];
       const contextualVideos = shouldIncludeImages ? getRelevantVideos(userMessage, context) : [];
       
       // Debug logging for media detection
       console.log('🎬 Media Detection Debug:');
       console.log(`   - User message: "${userMessage}"`);
-      console.log(`   - Should include images: ${shouldIncludeImages}`);
+      console.log(`   - Should include media: ${shouldIncludeImages}`);
       console.log(`   - Contextual images: [${contextualImages.length}] ${contextualImages.join(', ')}`);
       console.log(`   - Contextual videos: [${contextualVideos.length}] ${contextualVideos.join(', ')}`);
-      
-      // Extract additional images and videos from the AI response itself
-  const { cleanText, images: responseImages /* imageMeta */ } = parseResponseForMedia(aiText);
-      const responseVideos = extractVideosFromResponse(aiText);
-      
-      // Debug logging for parsed media
       console.log(`   - Response images: [${responseImages.length}] ${responseImages.join(', ')}`);
       console.log(`   - Response videos: [${responseVideos.length}] ${responseVideos.join(', ')}`);
+      console.log(`   - Inferred images: [${inferred.images.length}] ${inferred.images.join(', ')}`);
+      console.log(`   - Inferred videos: [${inferred.videos.length}] ${inferred.videos.join(', ')}`);
       
-      // Combine contextual images with any images found in the response
-      const allImages = [...contextualImages, ...responseImages];
-      const allVideos = [...contextualVideos, ...responseVideos];
+      // Combine contextual, parsed, and inferred media
+      const allImages = [...contextualImages, ...responseImages, ...inferred.images];
+      const allVideos = [...contextualVideos, ...responseVideos, ...inferred.videos];
       
       // --- NEW: intelligent de-duplication + prioritization ---
       const prioritizeMedia = (assets: string[], text: string): string[] => {
@@ -724,13 +791,7 @@ export const getOpenAIResponse = async (
           return true;
         });
         if (cleaned.length <= 1) return cleaned;
-        const lowerText = text.toLowerCase();
-        const keywordCandidates = Array.from(new Set(
-          lowerText
-            .replace(/[^a-z0-9_\-\s]/gi, ' ')
-            .split(/\s+/)
-            .filter(w => w.length > 3 && w.length < 30)
-        ));
+        const keywordCandidates = Array.from(new Set([...extractKeywords(text), ...extractKeywords(aiText)]));
         const score = (asset: string) => {
           const base = asset.toLowerCase();
           let s = 0;
@@ -760,12 +821,23 @@ export const getOpenAIResponse = async (
       console.log(`   - Final images (prioritized): [${prioritizedImages.length}] ${prioritizedImages.join(', ')}`);
       console.log(`   - Final videos (prioritized): [${prioritizedVideos.length}] ${prioritizedVideos.join(', ')}`);
       
+      // Build media metadata (derive alt/caption if not already available)
+      const imageMeta = prioritizedImages.map(src => ({
+        src,
+        alt: src.split('/').pop()?.replace(/[-_]/g, ' ').replace(/\.[^.]+$/, '')
+      }));
+      const videoMeta = prioritizedVideos.map(src => ({
+        src,
+        caption: src.split('/').pop()?.replace(/[-_]/g, ' ').replace(/\.[^.]+$/, '')
+      }));
+
       return {
         text: cleanText,
-        images: prioritizedImages.length > 0 ? prioritizedImages : undefined,
-        videos: prioritizedVideos.length > 0 ? prioritizedVideos : undefined,
-        options: [], // No predefined options - pure AI response
-        requiresAction: needsUserAction(cleanText, context)
+        images: prioritizedImages.length ? prioritizedImages : undefined,
+        videos: prioritizedVideos.length ? prioritizedVideos : undefined,
+        options: [],
+        requiresAction: needsUserAction(cleanText, context),
+        mediaMeta: (imageMeta.length || videoMeta.length) ? { images: imageMeta, videos: videoMeta } : undefined
       };
       
     } catch (error) {
