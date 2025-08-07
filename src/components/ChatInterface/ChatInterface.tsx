@@ -455,6 +455,7 @@ const ChatInterface: React.FC = () => {
   const [safetyCheckCompleted, setSafetyCheckCompleted] = useState<boolean>(false);
   const [safetyCheckDialogOpen, setSafetyCheckDialogOpen] = useState<boolean>(false);
   const [pendingUserMessage, setPendingUserMessage] = useState<string>('');
+  const [grinderSafetyTriggered, setGrinderSafetyTriggered] = useState<boolean>(false);
   const [safetyCheckItems, setSafetyCheckItems] = useState<SafetyCheckItem[]>([
     { 
       id: 1, 
@@ -2281,6 +2282,7 @@ Comments: ${wo.comments}`;
     
     // Reset safety check for new session
     setSafetyCheckCompleted(false);
+    setGrinderSafetyTriggered(false); // Reset grinder safety trigger
     setSafetyCheckItems([
       { 
         id: 1, 
@@ -2432,8 +2434,15 @@ Comments: ${wo.comments}`;
   // ======== EVENT-BASED SAFETY TRIGGER ========
   const triggerEventSafetyCheck = (eventType: string) => {
     if (eventType === 'espresso-machine-cleaning') {
-      // Reset safety state for event-based check
-      setQrScanCompleted(false);
+      // Prevent multiple triggers - only trigger once per session
+      if (grinderSafetyTriggered || safetyCheckDialogOpen) {
+        return;
+      }
+      
+      // Mark as triggered to prevent re-triggering
+      setGrinderSafetyTriggered(true);
+      
+      // Set grinder-specific safety items
       setSafetyCheckItems([
         {
           id: 1,
@@ -2469,8 +2478,10 @@ Comments: ${wo.comments}`;
   // ======== CHECK FOR SAFETY TRIGGERS IN MESSAGES ========
   const checkForSafetyTriggers = (message: string) => {
     // Check if espresso-machine-cleaning.svg is mentioned or displayed
-    if (message.includes('espresso-machine-cleaning.svg') || 
-        message.toLowerCase().includes('espresso machine cleaning')) {
+    // Only trigger if not already triggered and dialog is not open
+    if (!grinderSafetyTriggered && !safetyCheckDialogOpen && 
+        (message.includes('espresso-machine-cleaning.svg') || 
+         message.toLowerCase().includes('espresso machine cleaning'))) {
       setTimeout(() => {
         triggerEventSafetyCheck('espresso-machine-cleaning');
       }, 1500); // Delay to allow message to be displayed first
@@ -2493,6 +2504,13 @@ Comments: ${wo.comments}`;
           `Coffee grinder safety protocols verified. You may now proceed with the espresso machine cleaning procedure.\n\n` +
           `**Remember:** Both grinder and espresso machine components should be handled with care during maintenance operations.`
         );
+        
+        // Reset grinder safety trigger for future use (but keep it triggered for this session)
+        // This allows the user to complete the safety check without it re-triggering
+        // Reset the trigger after a delay to allow potential re-triggering in the same session
+        setTimeout(() => {
+          setGrinderSafetyTriggered(false);
+        }, 30000); // Reset after 30 seconds to allow re-triggering if needed
         
         // Reset to default safety check items for future use
         setTimeout(() => {
