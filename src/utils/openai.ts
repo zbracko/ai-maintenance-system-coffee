@@ -702,7 +702,7 @@ export const getOpenAIResponse = async (
       console.log(`   - Contextual videos: [${contextualVideos.length}] ${contextualVideos.join(', ')}`);
       
       // Extract additional images and videos from the AI response itself
-      const { cleanText, images: responseImages } = parseResponseForMedia(aiText);
+  const { cleanText, images: responseImages /* imageMeta */ } = parseResponseForMedia(aiText);
       const responseVideos = extractVideosFromResponse(aiText);
       
       // Debug logging for parsed media
@@ -713,13 +713,57 @@ export const getOpenAIResponse = async (
       const allImages = [...contextualImages, ...responseImages];
       const allVideos = [...contextualVideos, ...responseVideos];
       
-      console.log(`   - Final images: [${allImages.length}] ${allImages.join(', ')}`);
-      console.log(`   - Final videos: [${allVideos.length}] ${allVideos.join(', ')}`);
+      // --- NEW: intelligent de-duplication + prioritization ---
+      const prioritizeMedia = (assets: string[], text: string): string[] => {
+        const seen = new Set<string>();
+        const cleaned = assets.filter(a => {
+          if (!a) return false;
+          const key = a.trim();
+            if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+        if (cleaned.length <= 1) return cleaned;
+        const lowerText = text.toLowerCase();
+        const keywordCandidates = Array.from(new Set(
+          lowerText
+            .replace(/[^a-z0-9_\-\s]/gi, ' ')
+            .split(/\s+/)
+            .filter(w => w.length > 3 && w.length < 30)
+        ));
+        const score = (asset: string) => {
+          const base = asset.toLowerCase();
+          let s = 0;
+          keywordCandidates.forEach(kw => {
+            if (base.includes(kw)) s += 3; // direct keyword hit
+            if (kw.includes('clean') && /clean|wash|rinse/.test(base)) s += 2;
+            if (kw.includes('filter') && /filter/.test(base)) s += 2;
+            if (kw.includes('grind') && /grind|grinder/.test(base)) s += 2;
+            if (kw.includes('brew') && /brew|brewing/.test(base)) s += 2;
+            if (kw.includes('steam') && /steam/.test(base)) s += 2;
+          });
+          // Prefer svg/png for procedural diagrams over videos (when mixed scoring tie)
+          if (/\.svg$/i.test(base)) s += 1.5;
+          if (/diagram|step|guide/.test(base)) s += 1.2;
+          // Penalize generic fallback names
+          if (/placeholder|demo/.test(base)) s -= 2;
+          return s;
+        };
+        return cleaned
+          .map(a => ({ a, s: score(a) }))
+          .sort((x, y) => y.s - x.s)
+          .map(x => x.a);
+      };
+      const prioritizedImages = prioritizeMedia(allImages, userMessage).slice(0, 8); // hard cap to avoid overload
+      const prioritizedVideos = prioritizeMedia(allVideos, userMessage).slice(0, 4);
+      
+      console.log(`   - Final images (prioritized): [${prioritizedImages.length}] ${prioritizedImages.join(', ')}`);
+      console.log(`   - Final videos (prioritized): [${prioritizedVideos.length}] ${prioritizedVideos.join(', ')}`);
       
       return {
         text: cleanText,
-        images: allImages.length > 0 ? allImages : undefined,
-        videos: allVideos.length > 0 ? allVideos : undefined,
+        images: prioritizedImages.length > 0 ? prioritizedImages : undefined,
+        videos: prioritizedVideos.length > 0 ? prioritizedVideos : undefined,
         options: [], // No predefined options - pure AI response
         requiresAction: needsUserAction(cleanText, context)
       };
@@ -1915,28 +1959,54 @@ const getGeneralResponse = (
 /**
  * Parse response for media content (images and videos)
  */
-const parseResponseForMedia = (text: string): { cleanText: string; images: string[] } => {
-  let images: string[] = [];
+const parseResponseForMedia = (text: string): { cleanText: string; images: string[]; imageMeta?: { src: string; alt?: string; }[] } => {
+  const images: string[] = [];
+  const imageMeta: { src: string; alt?: string; }[] = [];
   let cleanText = text;
-  
-  // Original markdown format: ![alt](path)
-  const imageRegex = /!\[.*?\]\((.*?)\)/g;
-  let match;
-  while ((match = imageRegex.exec(text)) !== null) {
-    images.push(match[1]);
-    cleanText = cleanText.replace(match[0], '');
+  let match: RegExpExecArray | null;
+
+  // Pattern 1: Markdown ![alt](path)
+  const mdRegex = /!\[(.*?)\]\((\/[^)]+?)\)/g;
+  while ((match = mdRegex.exec(text)) !== null) {
+    const alt = match[1]?.trim();
+    const src = match[2]?.trim();
+    if (src) {
+      images.push(src);
+      imageMeta.push({ src, alt });
+      cleanText = cleanText.replace(match[0], '');
+    }
   }
-  
-  // New format that OpenAI is generating: (/assets/filename.png)
-  const parenImageRegex = /\(\/assets\/.*?\.(?:png|jpg|jpeg|svg|gif|webp)\)/g;
+
+  // Pattern 2: Bare parenthesis media references ( /assets/file.png )
+  const parenImageRegex = /\((\/assets\/[^)]+?\.(?:png|jpg|jpeg|svg|gif|webp))\)/gi;
   while ((match = parenImageRegex.exec(text)) !== null) {
-    // Remove the parentheses to get just the path
-    const imagePath = match[0].slice(1, -1); // Remove ( and )
-    images.push(imagePath);
-    cleanText = cleanText.replace(match[0], '');
+    const src = match[1]?.trim();
+    if (src) {
+      images.push(src);
+      // Derive alt from filename
+      const alt = src.split('/').pop()?.replace(/[-_]/g, ' ').replace(/\.[^.]+$/, '');
+      imageMeta.push({ src, alt });
+      cleanText = cleanText.replace(match[0], '');
+    }
   }
-  
-  return { cleanText: cleanText.trim(), images };
+
+  // Pattern 3: Custom tag [image: /path | alt=Something descriptive]
+  const customTag = /\[image:\s*(\/[^\]|]+)(?:\|\s*alt=(.+?))?\]/gi;
+  while ((match = customTag.exec(text)) !== null) {
+    const src = match[1]?.trim();
+    const altRaw = match[2]?.trim();
+    if (src) {
+      images.push(src);
+      imageMeta.push({ src, alt: altRaw || src.split('/').pop()?.replace(/[-_]/g, ' ').replace(/\.[^.]+$/, '') });
+      cleanText = cleanText.replace(match[0], '');
+    }
+  }
+
+  return {
+    cleanText: cleanText.trim(),
+    images,
+    imageMeta: imageMeta.length ? imageMeta : undefined
+  };
 };
 
 /**
@@ -1944,23 +2014,30 @@ const parseResponseForMedia = (text: string): { cleanText: string; images: strin
  */
 const extractVideosFromResponse = (text: string): string[] => {
   const videos: string[] = [];
-  
-  // Original format: [video:path]
-  const videoRegex = /\[video:(.*?)\]/g;
-  let match;
-  while ((match = videoRegex.exec(text)) !== null) {
-    videos.push(match[1]);
+  let match: RegExpExecArray | null;
+
+  // Pattern 1: [video:/path/to/file.mp4]
+  const squareTag = /\[video:(\/[^\]]+?)\]/gi;
+  while ((match = squareTag.exec(text)) !== null) {
+    const src = match[1]?.trim();
+    if (src) videos.push(src);
   }
-  
-  // New format that OpenAI is generating: (/assets/filename.mp4)
-  const parenVideoRegex = /\(\/assets\/.*?\.(?:mp4|webm|ogg|mov)\)/g;
+
+  // Pattern 2: Parenthesis references ( /assets/file.mp4 )
+  const parenVideoRegex = /\((\/assets\/[^)]+?\.(?:mp4|webm|ogg|mov))\)/gi;
   while ((match = parenVideoRegex.exec(text)) !== null) {
-    // Remove the parentheses to get just the path
-    const videoPath = match[0].slice(1, -1); // Remove ( and )
-    videos.push(videoPath);
+    const src = match[1]?.trim();
+    if (src) videos.push(src);
   }
-  
-  return videos;
+
+  // Pattern 3: Custom tag [video: /path | caption=Some caption]
+  const customTag = /\[video:\s*(\/[^\]|]+)(?:\|\s*caption=(.+?))?\]/gi;
+  while ((match = customTag.exec(text)) !== null) {
+    const src = match[1]?.trim();
+    if (src) videos.push(src);
+  }
+
+  return Array.from(new Set(videos));
 };
 
 /**

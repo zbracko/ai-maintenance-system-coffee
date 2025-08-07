@@ -156,6 +156,11 @@ interface Message {
   images?: string[];
   videos?: string[];
   instructions?: Instruction[];
+  // Future enhanced metadata (non-breaking optional additions)
+  mediaMeta?: {
+    images?: { src: string; alt?: string; priority?: number; }[];
+    videos?: { src: string; poster?: string; caption?: string; priority?: number; }[];
+  };
 }
 
 interface Instruction {
@@ -813,12 +818,25 @@ const ChatInterface: React.FC = () => {
     console.log('   - images:', images);
     console.log('   - videos:', videos);
     
+    // Build provisional metadata (alt text derived from filename, priority by order)
+    const imageMeta = images?.map((src, idx) => ({
+      src: src.startsWith('/') ? src : `/${src}`,
+      alt: src.split('/').pop()?.replace(/[-_]/g, ' ').replace(/\.[^.]+$/, ''),
+      priority: idx
+    }));
+    const videoMeta = videos?.map((src, idx) => ({
+      src: src.startsWith('/') ? src : `/${src}`,
+      caption: src.split('/').pop()?.replace(/[-_]/g, ' ').replace(/\.[^.]+$/, ''),
+      priority: idx
+    }));
+
     const message: Message = {
       sender: 'bot',
       text,
       images,
       videos,
-      instructions
+      instructions,
+      mediaMeta: (imageMeta || videoMeta) ? { images: imageMeta, videos: videoMeta } : undefined
     };
     
     console.log('🎬 Created message object:', {
@@ -3063,6 +3081,7 @@ Comments: ${wo.comments}`;
                         </Typography>
                         {msg.images?.length && (
                           <Box mt={2}>
+                            {/* TODO: Replace Slider with responsive grid when mediaMeta present for richer layout & lazy loading */}
                             <Slider {...sliderSettings} ref={sliderRef}>
                               {msg.images.map((img, idx) => (
                                 <Box key={idx} textAlign="center">
