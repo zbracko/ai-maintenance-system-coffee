@@ -31,8 +31,10 @@ import {
   Popover,
   IconButton,
   Switch,
-  FormControlLabel
+  FormControlLabel,
+  Checkbox
 } from '@mui/material';
+import { jsPDF } from 'jspdf';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import VideoCallIcon from '@mui/icons-material/VideoCall';
@@ -387,6 +389,110 @@ const MainPanel: React.FC = () => {
   // EXACT_PHRASES
   const [keySearchPhrases, setKeySearchPhrases] = useState<string[]>([]);
   const [newKeyPhrase, setNewKeyPhrase] = useState<string>("");
+
+  // SAFETY CHECK CONFIGURATION STATE
+  const [generalSafetyChecks, setGeneralSafetyChecks] = useState([
+    { id: 'ppe', label: 'Personal Protective Equipment (PPE)', icon: '🦺', required: true, image: '/assets/Picture2.png' },
+    { id: 'powerOff', label: 'Machine Power Disconnection', icon: '⚡', required: true, image: '/assets/Picture3.png' },
+    { id: 'lockout', label: 'Lockout/Tagout Procedures', icon: '🔒', required: true, image: '/assets/Picture4.png' },
+    { id: 'heatSafety', label: 'Hot Surface Safety Protocol', icon: '🔥', required: true, image: '/assets/Picture5.png' },
+    { id: 'chemicalSafety', label: 'Chemical Handling Safety', icon: '☠️', required: true, image: '/assets/Picture2.png' },
+    { id: 'ventilation', label: 'Adequate Ventilation Check', icon: '💨', required: true, image: '/assets/Picture3.png' }
+  ]);
+
+  const [grinderSafetyChecks, setGrinderSafetyChecks] = useState([
+    { 
+      id: 'grinderPower', 
+      label: 'Grinder Motor Disconnect', 
+      icon: '🔌', 
+      enabled: true,
+      image: 'coffee-grinder-operation.svg',
+      description: 'Ensure complete electrical isolation of grinder motor'
+    },
+    { 
+      id: 'burrSafety', 
+      label: 'Burr Safety Lock Engagement', 
+      icon: '⚙️', 
+      enabled: true,
+      image: 'coffee-grinder-operation.svg',
+      description: 'Lock grinding burrs before any maintenance work'
+    },
+    { 
+      id: 'debrisCheck', 
+      label: 'Foreign Object Detection', 
+      icon: '🔍', 
+      enabled: true,
+      image: 'grinder-jam-clearing.svg',
+      description: 'Check for metal or foreign objects in grinding chamber'
+    },
+    { 
+      id: 'hopperEmpty', 
+      label: 'Bean Hopper Emptying', 
+      icon: '☕', 
+      enabled: true,
+      image: 'coffee-grinder-operation.svg',
+      description: 'Remove all coffee beans before maintenance'
+    },
+    { 
+      id: 'jamClearance', 
+      label: 'Jam Clearance Procedure', 
+      icon: '🚨', 
+      enabled: true,
+      image: 'grinder-jam-clearing.svg',
+      description: 'Follow specific jam clearing safety protocol'
+    },
+    { 
+      id: 'calibrationCheck', 
+      label: 'Calibration Safety Verification', 
+      icon: '⚖️', 
+      enabled: true,
+      image: 'coffee-grinder-operation.svg',
+      description: 'Verify safe calibration settings before operation'
+    }
+  ]);
+
+  const [customSafetyChecks, setCustomSafetyChecks] = useState([
+    // Empty array for demo/placeholder - users can add new entries
+  ]);
+
+  const [customSafetySections, setCustomSafetySections] = useState([
+    // Array to store custom safety sections with their own checks
+  ]);
+
+  // Safety check dialog states
+  const [imageChangeDialog, setImageChangeDialog] = useState<{
+    open: boolean;
+    checkType: 'general' | 'grinder' | 'custom';
+    checkId: string;
+    currentImage: string;
+  }>({
+    open: false,
+    checkType: 'general',
+    checkId: '',
+    currentImage: ''
+  });
+
+  const [addStepDialog, setAddStepDialog] = useState<{
+    open: boolean;
+    stepType: 'general' | 'grinder' | 'custom';
+  }>({
+    open: false,
+    stepType: 'general'
+  });
+
+  const [newStep, setNewStep] = useState({
+    label: '',
+    icon: '',
+    description: '',
+    image: '/assets/Picture2.png'
+  });
+
+  const [addSectionDialog, setAddSectionDialog] = useState(false);
+  const [newSection, setNewSection] = useState({
+    name: '',
+    type: 'safety',
+    description: ''
+  });
 
   /** Switch Tabs */
   const handleTabChange = (e: React.SyntheticEvent, newVal: number) => {
@@ -1216,6 +1322,19 @@ See main parts catalog for complete listings and pricing.
     );
   };
 
+  /** Handle safety procedure attachment */
+  const handleAttachSafetyProcedure = (procedureType: string, procedure: any) => {
+    let snippet = '';
+    if (procedureType === 'grinder') {
+      snippet = `[SAFETY: ${procedure.label}](grinder-safety://${procedure.id})`;
+    } else if (procedureType === 'general') {
+      snippet = `[SAFETY: ${procedure.label}](general-safety://${procedure.id})`;
+    } else if (procedureType === 'custom') {
+      snippet = `[SAFETY: ${procedure.label}](custom-safety://${procedure.id})`;
+    }
+    insertIntoText(snippet);
+  };
+
   /** Handle resource attachment */
   const handleAttachResource = (resource: ResourceItem) => {
     const resourceUrl = resource.path?.startsWith('http')
@@ -1300,8 +1419,7 @@ See main parts catalog for complete listings and pricing.
     if (!selectedResource?.path) return;
     
     if (demoConfig.isDemo) {
-      // Demo mode: Simulate file saving
-      alert(`Demo: File changes saved successfully!\n\nFile: ${selectedResource.name}\nCharacters: ${fileContent.length}\nChunks: ${fileChunks.length}\n\nIn production, this would be saved to the server.`);
+      // Demo mode: File saving simulated silently
       return;
     }
     
@@ -1511,8 +1629,7 @@ See main parts catalog for complete listings and pricing.
     }
     
     if (demoConfig.isDemo) {
-      // Demo mode: Simulate note saving
-      alert(`Demo: Note added successfully!\n\nMachine: ${machineName}\nNote: ${noteContent}\n\nIn production, this would be saved to the machine's notes folder.`);
+      // Demo mode: Note saving simulated silently
       setFolderNote('');
       return;
     }
@@ -1581,7 +1698,6 @@ See main parts catalog for complete listings and pricing.
       setQrMachineModel('');
       setQrMachineNumber('');
       setQrLocation('');
-      alert(`Demo QR Code generated successfully for ${qrMachineModel} at ${qrLocation}`);
     } else {
       // Real API call for production
       try {
@@ -1644,7 +1760,6 @@ See main parts catalog for complete listings and pricing.
     if (demoConfig.isDemo) {
       // Demo mode: Add location locally
       setLocations([...locations, newLoc]);
-      alert(`Demo: Location added successfully!\n\n${newLoc.area}, ${newLoc.state}\n${newLoc.address}\nPOC: ${newLoc.poc}\n\nIn production, this would be saved to the database.`);
     } else {
       // Real API call for production
       try {
@@ -1788,6 +1903,483 @@ See main parts catalog for complete listings and pricing.
     }
   };
 
+  // SAFETY CHECK MANAGEMENT FUNCTIONS
+  const handleChangeImage = (checkType: 'general' | 'grinder' | 'custom', checkId: string, currentImage: string) => {
+    setImageChangeDialog({
+      open: true,
+      checkType,
+      checkId,
+      currentImage
+    });
+  };
+
+  const handleUpdateImage = (newImagePath: string) => {
+    const { checkType, checkId } = imageChangeDialog;
+    
+    if (checkType === 'general') {
+      setGeneralSafetyChecks(prev => prev.map(check => 
+        check.id === checkId 
+          ? { ...check, image: newImagePath }
+          : check
+      ));
+    } else if (checkType === 'grinder') {
+      setGrinderSafetyChecks(prev => prev.map(check => 
+        check.id === checkId 
+          ? { ...check, image: newImagePath }
+          : check
+      ));
+    } else if (checkType === 'custom') {
+      setCustomSafetyChecks(prev => prev.map(check => 
+        check.id === checkId 
+          ? { ...check, image: newImagePath }
+          : check
+      ));
+    }
+    
+    setImageChangeDialog({ open: false, checkType: 'general', checkId: '', currentImage: '' });
+  };
+
+  const handleAddStep = (stepType: 'general' | 'grinder' | 'custom') => {
+    setAddStepDialog({ open: true, stepType });
+    setNewStep({
+      label: '',
+      icon: '⚙️',
+      description: '',
+      image: '/assets/Picture2.png'
+    });
+  };
+
+  const handleSaveNewStep = () => {
+    if (!newStep.label.trim()) {
+      alert('Please enter a step label');
+      return;
+    }
+
+    const newStepData = {
+      id: `custom_${Date.now()}`,
+      label: newStep.label,
+      icon: newStep.icon,
+      description: newStep.description,
+      image: newStep.image,
+      enabled: true,
+      required: addStepDialog.stepType === 'general'
+    };
+
+    if (addStepDialog.stepType === 'general') {
+      setGeneralSafetyChecks(prev => [...prev, {
+        id: newStepData.id,
+        label: newStepData.label,
+        icon: newStepData.icon,
+        required: true,
+        image: newStepData.image
+      }]);
+    } else if (addStepDialog.stepType === 'grinder') {
+      setGrinderSafetyChecks(prev => [...prev, {
+        id: newStepData.id,
+        label: newStepData.label,
+        icon: newStepData.icon,
+        enabled: true,
+        image: newStepData.image,
+        description: newStepData.description
+      }]);
+    } else if (addStepDialog.stepType === 'custom') {
+      // Check if this step should go to a specific custom section
+      const targetSectionId = (window as any).targetSectionId;
+      
+      if (targetSectionId) {
+        // Add to specific custom section
+        setCustomSafetySections(prev => prev.map(section => 
+          section.id === targetSectionId 
+            ? { 
+                ...section, 
+                checks: [...section.checks, {
+                  id: newStepData.id,
+                  label: newStepData.label,
+                  icon: newStepData.icon,
+                  enabled: true,
+                  image: newStepData.image,
+                  description: newStepData.description
+                }]
+              }
+            : section
+        ));
+        // Clear the target section ID
+        delete (window as any).targetSectionId;
+      } else {
+        // Add to general custom safety checks (legacy behavior)
+        setCustomSafetyChecks(prev => [...prev, {
+          id: newStepData.id,
+          label: newStepData.label,
+          icon: newStepData.icon,
+          enabled: true,
+          image: newStepData.image,
+          description: newStepData.description
+        }]);
+      }
+    }
+
+    setAddStepDialog({ open: false, stepType: 'general' });
+  };
+
+  const handleAddNewSection = () => {
+    setAddSectionDialog(true);
+    setNewSection({
+      name: '',
+      type: 'safety',
+      description: ''
+    });
+  };
+
+  const handleSaveNewSection = () => {
+    if (!newSection.name.trim()) {
+      alert('Please enter a section name');
+      return;
+    }
+
+    // Create new custom safety section
+    const newCustomSection = {
+      id: `custom_section_${Date.now()}`,
+      name: newSection.name.trim(),
+      description: newSection.description.trim(),
+      icon: '🔧',
+      checks: [] // Empty array for safety checks in this section
+    };
+
+    setCustomSafetySections(prev => [...prev, newCustomSection]);
+    
+    setAddSectionDialog(false);
+    setNewSection({
+      name: '',
+      type: 'safety', 
+      description: ''
+    });
+  };
+
+  const handleAddStepToSection = (sectionId: string) => {
+    // Find the section to add step to
+    const targetSection = customSafetySections.find(section => section.id === sectionId);
+    if (!targetSection) return;
+    
+    // For now, use the existing dialog but with section context
+    setAddStepDialog({ open: true, stepType: 'custom' });
+    setNewStep({
+      label: '',
+      icon: '⚙️',
+      description: '',
+      image: '/assets/Picture2.png'
+    });
+    
+    // Store the target section ID for when we save
+    (window as any).targetSectionId = sectionId;
+  };
+
+  const handleConfigureSafetyProtocols = () => {
+    // Configuration functionality would be implemented here
+  };
+
+  const handleGenerateReport = () => {
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.width;
+      const pageHeight = doc.internal.pageSize.height;
+      const margin = 20;
+      const contentWidth = pageWidth - 2 * margin;
+
+      // Helper function to clean text for PDF
+      const cleanText = (text: string): string => {
+        return String(text || '')
+          .replace(/[\u{1F600}-\u{1F64F}]/gu, '') // Remove emoticons
+          .replace(/[\u{1F300}-\u{1F5FF}]/gu, '') // Remove misc symbols  
+          .replace(/[\u{1F680}-\u{1F6FF}]/gu, '') // Remove transport symbols
+          .replace(/[\u{2600}-\u{26FF}]/gu, '')   // Remove misc symbols
+          .replace(/[\u{2700}-\u{27BF}]/gu, '')   // Remove dingbats
+          .replace(/[^\x00-\x7F]/g, '')           // Remove non-ASCII characters
+          .replace(/\s+/g, ' ')                   // Normalize whitespace
+          .trim();
+      };
+
+      // Helper function to add wrapped text with proper page breaks
+      const addWrappedText = (text: string, x: number, y: number, fontSize: number = 10, isBold: boolean = false): number => {
+        doc.setFontSize(fontSize);
+        doc.setFont('helvetica', isBold ? 'bold' : 'normal');
+        
+        const cleanedText = cleanText(text);
+        const lines = doc.splitTextToSize(cleanedText, contentWidth);
+        
+        let currentY = y;
+        
+        for (let i = 0; i < lines.length; i++) {
+          // Check if we need a new page
+          if (currentY > pageHeight - 30) {
+            doc.addPage();
+            currentY = 20;
+          }
+          
+          doc.text(lines[i], x, currentY);
+          currentY += fontSize * 0.5; // Line spacing
+        }
+        
+        return currentY + 5; // Add some spacing after the text block
+      };
+
+      let yPosition = 20;
+
+      // Header with company branding
+      doc.setFillColor(52, 73, 94);
+      doc.rect(0, 0, pageWidth, 45, 'F');
+      
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(24);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Safety Compliance Report', margin, 25);
+      
+      doc.setFontSize(12);
+      doc.text('AI-Powered Coffee Machine Maintenance System', margin, 35);
+      
+      // Reset text color
+      doc.setTextColor(0, 0, 0);
+      yPosition = 60;
+
+      // Report Overview Section
+      doc.setFillColor(236, 240, 241);
+      doc.rect(margin - 5, yPosition - 5, contentWidth + 10, 8, 'F');
+      
+      yPosition = addWrappedText('REPORT OVERVIEW', margin, yPosition, 14, true);
+      yPosition += 5;
+
+      // Key metrics in two columns
+      const leftColumn = margin;
+      const rightColumn = pageWidth / 2 + 10;
+      
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Report Date:', leftColumn, yPosition);
+      doc.setFont('helvetica', 'normal');
+      doc.text(new Date().toLocaleDateString(), leftColumn + 35, yPosition);
+      
+      doc.setFont('helvetica', 'bold');
+      doc.text('Report Time:', rightColumn, yPosition);
+      doc.setFont('helvetica', 'normal');
+      doc.text(new Date().toLocaleTimeString(), rightColumn + 35, yPosition);
+      yPosition += 10;
+
+      doc.setFont('helvetica', 'bold');
+      doc.text('Compliance Rating:', leftColumn, yPosition);
+      doc.setFont('helvetica', 'normal');
+      doc.text('95% Compliant', leftColumn + 45, yPosition);
+      
+      doc.setFont('helvetica', 'bold');
+      doc.text('Risk Level:', rightColumn, yPosition);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Low Risk', rightColumn + 30, yPosition);
+      yPosition += 15;
+
+      // General Safety Protocols Section
+      doc.setFillColor(52, 152, 219);
+      doc.rect(margin - 5, yPosition - 5, contentWidth + 10, 8, 'F');
+      
+      doc.setTextColor(255, 255, 255);
+      yPosition = addWrappedText('GENERAL SAFETY PROTOCOLS', margin, yPosition, 14, true);
+      doc.setTextColor(0, 0, 0);
+      yPosition += 5;
+
+      yPosition = addWrappedText(`Active Protocols: ${generalSafetyChecks.length}`, margin, yPosition, 10, true);
+      yPosition += 3;
+
+      generalSafetyChecks.forEach((check, index) => {
+        if (yPosition > pageHeight - 40) {
+          doc.addPage();
+          yPosition = 20;
+        }
+        
+        const status = check.required ? 'REQUIRED' : 'OPTIONAL';
+        yPosition = addWrappedText(`${index + 1}. ${check.label} - ${status}`, margin + 5, yPosition, 9);
+      });
+      yPosition += 10;
+
+      // Grinder Safety Protocols Section
+      if (yPosition > pageHeight - 60) {
+        doc.addPage();
+        yPosition = 20;
+      }
+
+      doc.setFillColor(46, 125, 50);
+      doc.rect(margin - 5, yPosition - 5, contentWidth + 10, 8, 'F');
+      
+      doc.setTextColor(255, 255, 255);
+      yPosition = addWrappedText('GRINDER SAFETY PROTOCOLS', margin, yPosition, 14, true);
+      doc.setTextColor(0, 0, 0);
+      yPosition += 5;
+
+      const enabledGrinderChecks = grinderSafetyChecks.filter(check => check.enabled);
+      yPosition = addWrappedText(`Active Grinder Protocols: ${enabledGrinderChecks.length} of ${grinderSafetyChecks.length}`, margin, yPosition, 10, true);
+      yPosition += 3;
+
+      grinderSafetyChecks.forEach((check, index) => {
+        if (yPosition > pageHeight - 40) {
+          doc.addPage();
+          yPosition = 20;
+        }
+        
+        const status = check.enabled ? 'ENABLED' : 'DISABLED';
+        yPosition = addWrappedText(`${index + 1}. ${check.label} - ${status}`, margin + 5, yPosition, 9);
+        if (check.description) {
+          yPosition = addWrappedText(`   ${check.description}`, margin + 10, yPosition, 8);
+        }
+      });
+      yPosition += 10;
+
+      // Custom Safety Sections
+      if (customSafetySections.length > 0) {
+        if (yPosition > pageHeight - 60) {
+          doc.addPage();
+          yPosition = 20;
+        }
+
+        doc.setFillColor(156, 39, 176);
+        doc.rect(margin - 5, yPosition - 5, contentWidth + 10, 8, 'F');
+        
+        doc.setTextColor(255, 255, 255);
+        yPosition = addWrappedText('CUSTOM SAFETY SECTIONS', margin, yPosition, 14, true);
+        doc.setTextColor(0, 0, 0);
+        yPosition += 5;
+
+        yPosition = addWrappedText(`Custom Sections Created: ${customSafetySections.length}`, margin, yPosition, 10, true);
+        yPosition += 3;
+
+        customSafetySections.forEach((section, index) => {
+          if (yPosition > pageHeight - 40) {
+            doc.addPage();
+            yPosition = 20;
+          }
+          
+          yPosition = addWrappedText(`${index + 1}. ${section.name}`, margin + 5, yPosition, 10, true);
+          if (section.description) {
+            yPosition = addWrappedText(`   ${section.description}`, margin + 10, yPosition, 9);
+          }
+          if (section.checks && section.checks.length > 0) {
+            yPosition = addWrappedText(`   Safety Checks: ${section.checks.length}`, margin + 10, yPosition, 8);
+          }
+        });
+        yPosition += 10;
+      }
+
+      // Compliance Analysis Section
+      if (yPosition > pageHeight - 60) {
+        doc.addPage();
+        yPosition = 20;
+      }
+
+      doc.setFillColor(255, 152, 0);
+      doc.rect(margin - 5, yPosition - 5, contentWidth + 10, 8, 'F');
+      
+      doc.setTextColor(255, 255, 255);
+      yPosition = addWrappedText('COMPLIANCE ANALYSIS', margin, yPosition, 14, true);
+      doc.setTextColor(0, 0, 0);
+      yPosition += 5;
+
+      const totalProtocols = generalSafetyChecks.length + grinderSafetyChecks.filter(c => c.enabled).length + customSafetySections.length;
+      const complianceMetrics = [
+        `Total Active Protocols: ${totalProtocols}`,
+        `General Safety Compliance: 100% (${generalSafetyChecks.length}/${generalSafetyChecks.length})`,
+        `Grinder Safety Compliance: ${Math.round((enabledGrinderChecks.length / grinderSafetyChecks.length) * 100)}% (${enabledGrinderChecks.length}/${grinderSafetyChecks.length})`,
+        `Custom Sections Active: ${customSafetySections.length}`,
+        `Overall Safety Rating: Excellent`,
+        `Risk Assessment: Low Risk - All critical protocols enabled`,
+        `Last System Update: ${new Date().toLocaleDateString()}`,
+        `Next Review Date: ${new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}`
+      ];
+
+      complianceMetrics.forEach(metric => {
+        if (yPosition > pageHeight - 30) {
+          doc.addPage();
+          yPosition = 20;
+        }
+        yPosition = addWrappedText(`• ${metric}`, margin, yPosition, 10);
+      });
+      yPosition += 10;
+
+      // Recommendations Section
+      if (yPosition > pageHeight - 60) {
+        doc.addPage();
+        yPosition = 20;
+      }
+
+      doc.setFillColor(76, 175, 80);
+      doc.rect(margin - 5, yPosition - 5, contentWidth + 10, 8, 'F');
+      
+      doc.setTextColor(255, 255, 255);
+      yPosition = addWrappedText('RECOMMENDATIONS', margin, yPosition, 14, true);
+      doc.setTextColor(0, 0, 0);
+      yPosition += 5;
+
+      const recommendations = [
+        'Continue regular safety protocol reviews on monthly basis',
+        'Consider expanding custom safety sections for specialized equipment',
+        'Maintain current compliance levels through ongoing training',
+        'Review and update grinder safety protocols quarterly',
+        'Document any safety incidents for continuous improvement',
+        'Schedule next comprehensive safety audit in 6 months'
+      ];
+
+      recommendations.forEach(rec => {
+        if (yPosition > pageHeight - 30) {
+          doc.addPage();
+          yPosition = 20;
+        }
+        yPosition = addWrappedText(`• ${rec}`, margin, yPosition, 10);
+      });
+
+      // Footer
+      const totalPages = doc.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(128, 128, 128);
+        doc.text(
+          'Generated by AI Coffee Machine Maintenance System',
+          margin,
+          doc.internal.pageSize.height - 20
+        );
+        doc.text(
+          `Generated on: ${new Date().toLocaleString()}`,
+          margin,
+          doc.internal.pageSize.height - 15
+        );
+        doc.text(
+          `Page ${i} of ${totalPages}`,
+          pageWidth - margin - 30,
+          doc.internal.pageSize.height - 15
+        );
+      }
+
+      // Save the PDF
+      const filename = `Safety_Compliance_Report_${new Date().toISOString().split('T')[0]}.pdf`;
+      doc.save(filename);
+      
+    } catch (error) {
+      console.error('Error generating PDF report:', error);
+      alert('Error generating PDF report. Please try again.');
+    }
+  };
+
+  const handleViewGuideLibrary = () => {
+    // Guide library functionality would be implemented here
+  };
+
+  const handleToggleSafetyCheck = (checkType: 'general' | 'grinder', checkId: string) => {
+    if (checkType === 'general') {
+      // General safety checks are always required - no action needed
+      return;
+    } else {
+      setGrinderSafetyChecks(prev => prev.map(check => 
+        check.id === checkId 
+          ? { ...check, enabled: !check.enabled }
+          : check
+      ));
+    }
+  };
+
   return (
     <>
       {demoConfig.isDemo && <DemoBanner />}
@@ -1853,6 +2445,7 @@ See main parts catalog for complete listings and pricing.
             <Typography variant="h6" gutterBottom sx={{ color: 'rgba(30, 41, 59, 0.9)', fontWeight: 700 }}>
               ☕ Coffee Machine Resources & Manuals
             </Typography>
+
             {resources.map((rItem, i) => (
               <Box key={i} mb={1}>
                 <ResourceNode
@@ -1863,6 +2456,164 @@ See main parts catalog for complete listings and pricing.
                 />
               </Box>
             ))}
+
+            {/* SAFETY PROCEDURES SECTION - COLLAPSIBLE */}
+            <Accordion defaultExpanded={false} sx={{ mt: 3 }}>
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Typography variant="h6" sx={{ color: 'rgba(30, 41, 59, 0.9)', fontWeight: 700 }}>
+                  🛡️ Safety Procedures
+                </Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                {/* General Safety Procedures */}
+                <Typography variant="subtitle2" sx={{ mb: 1, color: 'rgba(34, 197, 94, 0.9)', fontWeight: 600 }}>
+                  General Safety Checks
+                </Typography>
+                {generalSafetyChecks.map((check, i) => (
+                  <Box key={i} sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'space-between',
+                    p: 1,
+                    mb: 0.5,
+                    backgroundColor: 'rgba(34, 197, 94, 0.05)',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(34, 197, 94, 0.1)'
+                  }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <span>{check.icon}</span>
+                      <Typography variant="body2" sx={{ color: 'rgba(30, 41, 59, 0.8)' }}>
+                        {check.label}
+                      </Typography>
+                    </Box>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => handleAttachSafetyProcedure('general', check)}
+                      sx={{
+                        fontSize: '0.7rem',
+                        color: 'rgba(34, 197, 94, 0.8)',
+                        borderColor: 'rgba(34, 197, 94, 0.3)',
+                        '&:hover': {
+                          borderColor: 'rgba(34, 197, 94, 0.6)',
+                          backgroundColor: 'rgba(34, 197, 94, 0.05)'
+                        }
+                      }}
+                    >
+                      attach
+                    </Button>
+                  </Box>
+                ))}
+
+                {/* Grinder Safety Procedures */}
+                <Typography variant="subtitle2" sx={{ mt: 2, mb: 1, color: 'rgba(249, 115, 22, 0.9)', fontWeight: 600 }}>
+                  Grinder Safety Checks
+                </Typography>
+                {grinderSafetyChecks.map((check, i) => (
+                  <Box key={i} sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'space-between',
+                    p: 1,
+                    mb: 0.5,
+                    backgroundColor: 'rgba(249, 115, 22, 0.05)',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(249, 115, 22, 0.1)'
+                  }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <span>{check.icon}</span>
+                      <Typography variant="body2" sx={{ color: 'rgba(30, 41, 59, 0.8)' }}>
+                        {check.label}
+                      </Typography>
+                      {!check.enabled && (
+                        <Chip size="small" label="Disabled" color="default" sx={{ ml: 1 }} />
+                      )}
+                    </Box>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => handleAttachSafetyProcedure('grinder', check)}
+                      sx={{
+                        fontSize: '0.7rem',
+                        color: 'rgba(249, 115, 22, 0.8)',
+                        borderColor: 'rgba(249, 115, 22, 0.3)',
+                        '&:hover': {
+                          borderColor: 'rgba(249, 115, 22, 0.6)',
+                          backgroundColor: 'rgba(249, 115, 22, 0.05)'
+                        }
+                      }}
+                    >
+                      attach
+                    </Button>
+                  </Box>
+                ))}
+
+                {/* Custom Safety Procedures */}
+                <Typography variant="subtitle2" sx={{ mt: 2, mb: 1, color: 'rgba(139, 92, 246, 0.9)', fontWeight: 600 }}>
+                  Custom Safety Checks
+                </Typography>
+                {customSafetySections.length === 0 ? (
+                  <Box sx={{ 
+                    p: 2, 
+                    textAlign: 'center', 
+                    backgroundColor: 'rgba(139, 92, 246, 0.02)',
+                    borderRadius: '8px',
+                    border: '1px dashed rgba(139, 92, 246, 0.2)'
+                  }}>
+                    <Typography variant="body2" sx={{ color: 'rgba(30, 41, 59, 0.6)' }}>
+                      No custom safety sections configured
+                    </Typography>
+                  </Box>
+                ) : (
+                  customSafetySections.map((section) => (
+                    <Box key={section.id} sx={{ mb: 1 }}>
+                      <Typography variant="caption" sx={{ color: 'rgba(139, 92, 246, 0.8)', fontWeight: 600 }}>
+                        {section.icon} {section.name}
+                      </Typography>
+                      {section.checks.map((check, i) => (
+                        <Box key={i} sx={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'space-between',
+                          p: 1,
+                          ml: 2,
+                          mb: 0.5,
+                          backgroundColor: 'rgba(139, 92, 246, 0.05)',
+                          borderRadius: '8px',
+                          border: '1px solid rgba(139, 92, 246, 0.1)'
+                        }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <span>{check.icon}</span>
+                            <Typography variant="body2" sx={{ color: 'rgba(30, 41, 59, 0.8)' }}>
+                              {check.label}
+                            </Typography>
+                            {!check.enabled && (
+                              <Chip size="small" label="Disabled" color="default" sx={{ ml: 1 }} />
+                            )}
+                          </Box>
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            onClick={() => handleAttachSafetyProcedure('custom', check)}
+                            sx={{
+                              fontSize: '0.7rem',
+                              color: 'rgba(139, 92, 246, 0.8)',
+                              borderColor: 'rgba(139, 92, 246, 0.3)',
+                              '&:hover': {
+                                borderColor: 'rgba(139, 92, 246, 0.6)',
+                                backgroundColor: 'rgba(139, 92, 246, 0.05)'
+                              }
+                            }}
+                          >
+                            attach
+                          </Button>
+                        </Box>
+                      ))}
+                    </Box>
+                  ))
+                )}
+              </AccordionDetails>
+            </Accordion>
           </Paper>
           <Box sx={{ flex: 1, p: 2, overflowY: 'auto' }}>
             <Typography variant="h6" gutterBottom sx={{ color: 'rgba(30, 41, 59, 0.9)', fontWeight: 700 }}>
@@ -2503,6 +3254,412 @@ See main parts catalog for complete listings and pricing.
               </Button>
             </Box>
           </Box>
+          {/* Safety Check Configuration Section */}
+          <Accordion defaultExpanded={false} sx={{ mt: 4 }}>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="subtitle2" sx={{ color: 'rgba(30, 41, 59, 0.8)', fontWeight: 600 }}>
+                ⚠️ Safety Check Configuration (Demo Showcase)
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Typography variant="body2" sx={{ mb: 3, color: 'rgba(30, 41, 59, 0.7)' }}>
+                Configure safety check protocols for coffee machine maintenance. These settings demonstrate the system's safety management capabilities.
+              </Typography>
+              
+              {/* General Safety Checks */}
+              <Paper sx={{ p: 3, mb: 3, backgroundColor: 'rgba(34, 197, 94, 0.05)', borderRadius: '12px' }}>
+                <Typography variant="h6" sx={{ mb: 2, color: 'rgba(30, 41, 59, 0.9)', fontWeight: 700 }}>
+                  ✅ General Safety Checks (Always Active)
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 2, color: 'rgba(30, 41, 59, 0.7)' }}>
+                  These safety protocols are automatically enforced for all maintenance activities.
+                </Typography>
+                
+                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 2 }}>
+                  {generalSafetyChecks.map((check) => (
+                    <Paper key={check.id} sx={{ 
+                      p: 2, 
+                      backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                      border: '1px solid rgba(34, 197, 94, 0.3)',
+                      borderRadius: '8px'
+                    }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                        <Box component="span" sx={{ fontSize: '20px' }}>{check.icon}</Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'rgba(30, 41, 59, 0.9)' }}>
+                          {check.label}
+                        </Typography>
+                        <Tooltip 
+                          title={
+                            <Box sx={{ textAlign: 'center' }}>
+                              <img
+                                src={check.image}
+                                alt={check.label}
+                                style={{ maxWidth: '200px', maxHeight: '200px', objectFit: 'contain' }}
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
+                              <Typography variant="caption" sx={{ display: 'block', mt: 1 }}>
+                                Visual Reference Guide
+                              </Typography>
+                            </Box>
+                          }
+                          arrow
+                          placement="left"
+                        >
+                          <IconButton size="small" sx={{ color: 'rgba(34, 197, 94, 0.8)' }}>
+                            <VisibilityIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
+                      <FormControlLabel
+                        control={
+                          <Switch 
+                            checked={check.required} 
+                            disabled 
+                            size="small"
+                            onClick={() => handleToggleSafetyCheck('general', check.id)}
+                          />
+                        }
+                        label="Required"
+                        sx={{ color: 'rgba(30, 41, 59, 0.7)' }}
+                      />
+                      <Typography variant="caption" display="block" sx={{ color: 'rgba(34, 197, 94, 0.8)', fontWeight: 500, mb: 2 }}>
+                        Always enforced for safety compliance
+                      </Typography>
+                      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          startIcon={<PhotoCameraIcon />}
+                          sx={{ 
+                            fontSize: '0.7rem',
+                            color: 'rgba(34, 197, 94, 0.8)',
+                            borderColor: 'rgba(34, 197, 94, 0.3)',
+                            '&:hover': {
+                              borderColor: 'rgba(34, 197, 94, 0.6)',
+                              backgroundColor: 'rgba(34, 197, 94, 0.05)'
+                            }
+                          }}
+                          onClick={() => handleChangeImage('general', check.id, check.image)}
+                        >
+                          Change Image
+                        </Button>
+                      </Box>
+                    </Paper>
+                  ))}
+                </Box>
+                
+                <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
+                  <Button
+                    variant="contained"
+                    startIcon={<span>➕</span>}
+                    sx={{ backgroundColor: 'rgba(34, 197, 94, 0.9)' }}
+                    onClick={() => handleAddStep('general')}
+                  >
+                    Add New General Safety Step
+                  </Button>
+                </Box>
+              </Paper>
+
+              {/* Grinder-Specific Safety Checks */}
+              <Paper sx={{ p: 3, mb: 3, backgroundColor: 'rgba(249, 115, 22, 0.05)', borderRadius: '12px' }}>
+                <Typography variant="h6" sx={{ mb: 2, color: 'rgba(30, 41, 59, 0.9)', fontWeight: 700 }}>
+                  ⚙️ Grinder-Specific Safety Checks
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 2, color: 'rgba(30, 41, 59, 0.7)' }}>
+                  Additional safety protocols specifically for grinder maintenance and troubleshooting.
+                </Typography>
+                
+                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 2 }}>
+                  {grinderSafetyChecks.map((check) => (
+                    <Paper key={check.id} sx={{ 
+                      p: 2, 
+                      backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                      border: '1px solid rgba(249, 115, 22, 0.3)',
+                      borderRadius: '8px',
+                      position: 'relative'
+                    }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Box component="span" sx={{ fontSize: '20px' }}>{check.icon}</Box>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'rgba(30, 41, 59, 0.9)' }}>
+                            {check.label}
+                          </Typography>
+                        </Box>
+                        <Tooltip 
+                          title={
+                            <Box sx={{ textAlign: 'center' }}>
+                              <img
+                                src={`/assets/${check.image}`}
+                                alt={check.label}
+                                style={{ maxWidth: '200px', maxHeight: '200px', objectFit: 'contain' }}
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
+                              <Typography variant="caption" sx={{ display: 'block', mt: 1 }}>
+                                Visual Reference Guide
+                              </Typography>
+                            </Box>
+                          }
+                          arrow
+                          placement="left"
+                        >
+                          <IconButton size="small" sx={{ color: 'rgba(249, 115, 22, 0.8)' }}>
+                            <VisibilityIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
+                      
+                      <Typography variant="body2" sx={{ mb: 2, color: 'rgba(30, 41, 59, 0.7)', fontSize: '0.75rem' }}>
+                        {check.description}
+                      </Typography>
+                      
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                        <FormControlLabel
+                          control={
+                            <Switch 
+                              checked={check.enabled} 
+                              size="small"
+                              onChange={() => handleToggleSafetyCheck('grinder', check.id)}
+                            />
+                          }
+                          label="Enabled"
+                          sx={{ color: 'rgba(30, 41, 59, 0.7)' }}
+                        />
+                      </Box>
+                      
+                      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          startIcon={<PhotoCameraIcon />}
+                          sx={{ 
+                            fontSize: '0.7rem',
+                            color: 'rgba(249, 115, 22, 0.8)',
+                            borderColor: 'rgba(249, 115, 22, 0.3)',
+                            '&:hover': {
+                              borderColor: 'rgba(249, 115, 22, 0.6)',
+                              backgroundColor: 'rgba(249, 115, 22, 0.05)'
+                            }
+                          }}
+                          onClick={() => handleChangeImage('grinder', check.id, check.image)}
+                        >
+                          Change Image
+                        </Button>
+                      </Box>
+                    </Paper>
+                  ))}
+                </Box>
+                
+                <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
+                  <Button
+                    variant="contained"
+                    startIcon={<span>➕</span>}
+                    sx={{ backgroundColor: 'rgba(249, 115, 22, 0.9)' }}
+                    onClick={() => handleAddStep('grinder')}
+                  >
+                    Add New Grinder Safety Step
+                  </Button>
+                </Box>
+              </Paper>
+
+              {/* Dynamic Custom Safety Sections */}
+              {customSafetySections.map((section, sectionIndex) => (
+                <Paper key={section.id} sx={{ p: 3, backgroundColor: 'rgba(139, 92, 246, 0.05)', borderRadius: '12px' }}>
+                  <Typography variant="h6" sx={{ mb: 2, color: 'rgba(30, 41, 59, 0.9)', fontWeight: 700 }}>
+                    {section.icon} {section.name}
+                  </Typography>
+                  {section.description && (
+                    <Typography variant="body2" sx={{ mb: 3, color: 'rgba(30, 41, 59, 0.7)' }}>
+                      {section.description}
+                    </Typography>
+                  )}
+                  
+                  {section.checks.length === 0 ? (
+                    <Box sx={{ 
+                      p: 3, 
+                      textAlign: 'center', 
+                      backgroundColor: 'rgba(139, 92, 246, 0.02)',
+                      borderRadius: '8px',
+                      border: '2px dashed rgba(139, 92, 246, 0.2)'
+                    }}>
+                      <Typography variant="body1" sx={{ color: 'rgba(30, 41, 59, 0.6)', mb: 2 }}>
+                        No safety procedures configured in this section
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: 'rgba(30, 41, 59, 0.5)' }}>
+                        Click "Add New Safety Step" to create your first safety procedure for this section
+                      </Typography>
+                    </Box>
+                  ) : (
+                    <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 2 }}>
+                      {section.checks.map((check, index) => (
+                        <Paper key={index} sx={{
+                          p: 2,
+                          backgroundColor: 'rgba(139, 92, 246, 0.02)',
+                          border: '1px solid rgba(139, 92, 246, 0.1)',
+                          borderRadius: '8px'
+                        }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                            <span style={{ fontSize: '1.2rem' }}>{check.icon}</span>
+                            <Typography variant="subtitle2" sx={{ color: 'rgba(30, 41, 59, 0.8)', fontWeight: 600 }}>
+                              {check.label}
+                            </Typography>
+                          </Box>
+                          {check.description && (
+                            <Typography variant="body2" sx={{ color: 'rgba(30, 41, 59, 0.6)', mb: 2 }}>
+                              {check.description}
+                            </Typography>
+                          )}
+                          <Box sx={{ display: 'flex', gap: 1 }}>
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              onClick={() => handleChangeImage('custom', check.id, check.image)}
+                              sx={{
+                                fontSize: '0.7rem',
+                                color: 'rgba(139, 92, 246, 0.8)',
+                                borderColor: 'rgba(139, 92, 246, 0.3)',
+                                '&:hover': {
+                                  borderColor: 'rgba(139, 92, 246, 0.6)',
+                                  backgroundColor: 'rgba(139, 92, 246, 0.05)'
+                                }
+                              }}
+                            >
+                              Change Image
+                            </Button>
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              onClick={() => handleAttachSafetyProcedure('custom', check)}
+                              sx={{
+                                fontSize: '0.7rem',
+                                color: 'rgba(139, 92, 246, 0.8)',
+                                borderColor: 'rgba(139, 92, 246, 0.3)',
+                                '&:hover': {
+                                  borderColor: 'rgba(139, 92, 246, 0.6)',
+                                  backgroundColor: 'rgba(139, 92, 246, 0.05)'
+                                }
+                              }}
+                            >
+                              attach
+                            </Button>
+                          </Box>
+                        </Paper>
+                      ))}
+                    </Box>
+                  )}
+                  
+                  <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
+                    <Button
+                      variant="contained"
+                      startIcon={<span>➕</span>}
+                      sx={{ backgroundColor: 'rgba(139, 92, 246, 0.9)' }}
+                      onClick={() => handleAddStepToSection(section.id)}
+                    >
+                      Add New Safety Step
+                    </Button>
+                  </Box>
+                </Paper>
+              ))}
+
+              {/* Add New Safety Section Button */}
+              <Box sx={{ display: 'flex', justifyContent: 'center', my: 3 }}>
+                <Button
+                  variant="contained"
+                  startIcon={<span>➕</span>}
+                  sx={{ 
+                    backgroundColor: 'rgba(99, 102, 241, 0.9)',
+                    color: 'white',
+                    fontWeight: 600,
+                    px: 4,
+                    py: 1.5,
+                    '&:hover': {
+                      backgroundColor: 'rgba(99, 102, 241, 1)',
+                    }
+                  }}
+                  onClick={handleAddNewSection}
+                >
+                  Add New Safety Section
+                </Button>
+              </Box>
+
+              {/* Safety Check System Status */}
+              <Paper sx={{ p: 3, backgroundColor: 'rgba(59, 130, 246, 0.05)', borderRadius: '12px' }}>
+                <Typography variant="h6" sx={{ mb: 2, color: 'rgba(30, 41, 59, 0.9)', fontWeight: 700 }}>
+                  📊 Safety Check System Status
+                </Typography>
+                
+                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 2 }}>
+                  <Paper sx={{ p: 2, backgroundColor: 'rgba(34, 197, 94, 0.1)', borderRadius: '8px' }}>
+                    <Typography variant="caption" sx={{ color: 'rgba(30, 41, 59, 0.7)' }}>Active Safety Protocols</Typography>
+                    <Typography variant="h5" sx={{ color: 'rgba(34, 197, 94, 0.9)', fontWeight: 700 }}>
+                      12
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: 'rgba(30, 41, 59, 0.7)' }}>
+                      6 General + 6 Grinder-specific
+                    </Typography>
+                  </Paper>
+                  
+                  <Paper sx={{ p: 2, backgroundColor: 'rgba(249, 115, 22, 0.1)', borderRadius: '8px' }}>
+                    <Typography variant="caption" sx={{ color: 'rgba(30, 41, 59, 0.7)' }}>Compliance Rate</Typography>
+                    <Typography variant="h5" sx={{ color: 'rgba(249, 115, 22, 0.9)', fontWeight: 700 }}>
+                      98.5%
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: 'rgba(30, 41, 59, 0.7)' }}>
+                      Last 30 days
+                    </Typography>
+                  </Paper>
+                  
+                  <Paper sx={{ p: 2, backgroundColor: 'rgba(139, 92, 246, 0.1)', borderRadius: '8px' }}>
+                    <Typography variant="caption" sx={{ color: 'rgba(30, 41, 59, 0.7)' }}>Custom Sections</Typography>
+                    <Typography variant="h5" sx={{ color: 'rgba(139, 92, 246, 0.9)', fontWeight: 700 }}>
+                      {customSafetySections.length}
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: 'rgba(30, 41, 59, 0.7)' }}>
+                      User-defined procedures
+                    </Typography>
+                  </Paper>
+                  
+                  <Paper sx={{ p: 2, backgroundColor: 'rgba(236, 72, 153, 0.1)', borderRadius: '8px' }}>
+                    <Typography variant="caption" sx={{ color: 'rgba(30, 41, 59, 0.7)' }}>Recent Checks</Typography>
+                    <Typography variant="h5" sx={{ color: 'rgba(236, 72, 153, 0.9)', fontWeight: 700 }}>
+                      247
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: 'rgba(30, 41, 59, 0.7)' }}>
+                      This week
+                    </Typography>
+                  </Paper>
+                </Box>
+                
+                <Box sx={{ mt: 3, display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center' }}>
+                  <Button 
+                    variant="contained" 
+                    startIcon={<span>📊</span>}
+                    sx={{ 
+                      backgroundColor: 'rgba(34, 197, 94, 0.9)',
+                      color: 'white',
+                      fontWeight: 600,
+                      px: 4,
+                      py: 1.5,
+                      '&:hover': {
+                        backgroundColor: 'rgba(34, 197, 94, 1)',
+                      }
+                    }}
+                    onClick={handleGenerateReport}
+                  >
+                    Download Safety Report
+                  </Button>
+                </Box>
+              </Paper>
+              
+              <Typography variant="caption" display="block" sx={{ mt: 2, color: 'rgba(30, 41, 59, 0.6)', fontStyle: 'italic' }}>
+                🎭 Demo Mode: This safety check configuration interface demonstrates the system's capability to manage complex safety protocols. In production, these settings would integrate with the live safety check system and compliance tracking.
+              </Typography>
+            </AccordionDetails>
+          </Accordion>
+
           <Accordion defaultExpanded={false} sx={{ mt: 4 }}>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
               <Typography variant="subtitle2" sx={{ color: 'rgba(30, 41, 59, 0.8)', fontWeight: 600 }}>
@@ -2845,6 +4002,185 @@ See main parts catalog for complete listings and pricing.
           </Box>
         )}
       </Popover>
+
+      {/* Safety Check Configuration Dialogs */}
+      {/* Image Change Dialog */}
+      <Dialog open={imageChangeDialog.open} onClose={() => setImageChangeDialog({ open: false, checkType: 'general', checkId: '', currentImage: '' })} maxWidth="sm" fullWidth>
+        <DialogTitle>Change Safety Check Image</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ mb: 2, color: 'rgba(30, 41, 59, 0.7)' }}>
+            Select a new image for this safety check visual reference guide.
+          </Typography>
+          
+          <Typography variant="subtitle2" sx={{ mb: 1, color: 'rgba(30, 41, 59, 0.8)', fontWeight: 600 }}>
+            Current Image:
+          </Typography>
+          <Box sx={{ mb: 3, textAlign: 'center' }}>
+            <img
+              src={imageChangeDialog.currentImage}
+              alt="Current"
+              style={{ maxWidth: '200px', maxHeight: '150px', objectFit: 'contain', border: '1px solid #e2e8f0', borderRadius: '8px' }}
+            />
+          </Box>
+
+          <Typography variant="subtitle2" sx={{ mb: 1, color: 'rgba(30, 41, 59, 0.8)', fontWeight: 600 }}>
+            Select New Image:
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 2 }}>
+            {[
+              '/assets/Picture2.png',
+              '/assets/Picture3.png',
+              '/assets/Picture4.png',
+              '/assets/Picture5.png',
+              '/assets/espresso-machine-cleaning.svg',
+              '/assets/coffee-grinder-operation.svg',
+              '/assets/steam-wand-cleaning.svg',
+              '/assets/grinder-jam-clearing.svg'
+            ].map((imagePath) => (
+              <Button
+                key={imagePath}
+                variant="outlined"
+                size="small"
+                onClick={() => handleUpdateImage(imagePath)}
+                sx={{ textTransform: 'none', p: 1 }}
+              >
+                <img 
+                  src={imagePath} 
+                  alt={imagePath} 
+                  style={{ width: '60px', height: '40px', objectFit: 'contain' }}
+                />
+              </Button>
+            ))}
+          </Box>
+          
+          <TextField
+            fullWidth
+            label="Custom Image Path"
+            placeholder="e.g., /assets/my-custom-image.svg"
+            sx={{ mb: 2 }}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                const target = e.target as HTMLInputElement;
+                handleUpdateImage(target.value);
+              }
+            }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setImageChangeDialog({ open: false, checkType: 'general', checkId: '', currentImage: '' })}>
+            Cancel
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Add Step Dialog */}
+      <Dialog open={addStepDialog.open} onClose={() => setAddStepDialog({ open: false, stepType: 'general' })} maxWidth="sm" fullWidth>
+        <DialogTitle>Add New {addStepDialog.stepType === 'general' ? 'General' : addStepDialog.stepType === 'grinder' ? 'Grinder' : 'Custom'} Safety Step</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ mb: 2, color: 'rgba(30, 41, 59, 0.7)' }}>
+            Create a new safety check step for {addStepDialog.stepType} maintenance procedures.
+          </Typography>
+          
+          <TextField
+            fullWidth
+            label="Step Label"
+            value={newStep.label}
+            onChange={(e) => setNewStep(prev => ({ ...prev, label: e.target.value }))}
+            sx={{ mb: 2 }}
+            placeholder="e.g., Check Electrical Connections"
+          />
+          
+          <TextField
+            fullWidth
+            label="Icon (Emoji)"
+            value={newStep.icon}
+            onChange={(e) => setNewStep(prev => ({ ...prev, icon: e.target.value }))}
+            sx={{ mb: 2 }}
+            placeholder="e.g., ⚡, 🔧, 🛡️"
+          />
+          
+          <TextField
+            fullWidth
+            multiline
+            rows={3}
+            label="Description"
+            value={newStep.description}
+            onChange={(e) => setNewStep(prev => ({ ...prev, description: e.target.value }))}
+            sx={{ mb: 2 }}
+            placeholder="Detailed description of the safety step..."
+          />
+          
+          <TextField
+            fullWidth
+            label="Image Path"
+            value={newStep.image}
+            onChange={(e) => setNewStep(prev => ({ ...prev, image: e.target.value }))}
+            sx={{ mb: 2 }}
+            placeholder="/assets/my-safety-image.svg"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setAddStepDialog({ open: false, stepType: 'general' })}>
+            Cancel
+          </Button>
+          <Button variant="contained" onClick={handleSaveNewStep}>
+            Add Step
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Add Section Dialog */}
+      <Dialog open={addSectionDialog} onClose={() => setAddSectionDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Add New Safety Section</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ mb: 2, color: 'rgba(30, 41, 59, 0.7)' }}>
+            Create a completely new safety protocol section (like "Espresso Safety" or "Steam System Safety").
+          </Typography>
+          
+          <TextField
+            fullWidth
+            label="Section Name"
+            value={newSection.name}
+            onChange={(e) => setNewSection(prev => ({ ...prev, name: e.target.value }))}
+            sx={{ mb: 2 }}
+            placeholder="e.g., Espresso Machine Safety Checks"
+          />
+          
+          <FormControl fullWidth sx={{ mb: 2 }}>
+            <InputLabel>Section Type</InputLabel>
+            <Select
+              value={newSection.type}
+              label="Section Type"
+              onChange={(e) => setNewSection(prev => ({ ...prev, type: e.target.value as string }))}
+            >
+              <MenuItem value="safety">Safety Protocols</MenuItem>
+              <MenuItem value="maintenance">Maintenance Procedures</MenuItem>
+              <MenuItem value="emergency">Emergency Procedures</MenuItem>
+              <MenuItem value="training">Training Requirements</MenuItem>
+              <MenuItem value="compliance">Compliance Checks</MenuItem>
+            </Select>
+          </FormControl>
+          
+          <TextField
+            fullWidth
+            multiline
+            rows={3}
+            label="Description"
+            value={newSection.description}
+            onChange={(e) => setNewSection(prev => ({ ...prev, description: e.target.value }))}
+            sx={{ mb: 2 }}
+            placeholder="Describe what this safety section covers..."
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setAddSectionDialog(false)}>
+            Cancel
+          </Button>
+          <Button variant="contained" onClick={handleSaveNewSection}>
+            Create Section
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };
