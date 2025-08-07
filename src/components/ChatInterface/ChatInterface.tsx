@@ -433,6 +433,17 @@ const ChatInterface: React.FC = () => {
     "What machines do you support?"
   ]);
   
+  // ======== SAFETY CHECK STATE ========
+  const [safetyCheckCompleted, setSafetyCheckCompleted] = useState<boolean>(false);
+  const [safetyCheckDialogOpen, setSafetyCheckDialogOpen] = useState<boolean>(false);
+  const [pendingUserMessage, setPendingUserMessage] = useState<string>('');
+  const [safetyCheckItems, setSafetyCheckItems] = useState([
+    { id: 1, label: 'I have read and understand the safety procedures', checked: false },
+    { id: 2, label: 'I am wearing appropriate personal protective equipment (PPE)', checked: false },
+    { id: 3, label: 'I have ensured the work area is safe and clear', checked: false },
+    { id: 4, label: 'I will follow all maintenance protocols and guidelines', checked: false }
+  ]);
+  
   // Initialize session tracking when component mounts
   useEffect(() => {
     if (sessionId && !sessionStartTime) {
@@ -1543,6 +1554,15 @@ const ChatInterface: React.FC = () => {
   const handleSend = async (voiceText?: string) => {
     const userText = voiceText ? voiceText.trim() : input.trim();
     if (!userText) return;
+    
+    // Safety check - if this is the first message and safety check hasn't been completed
+    if (!safetyCheckCompleted && messages.length <= 1) {
+      setPendingUserMessage(userText);
+      setSafetyCheckDialogOpen(true);
+      setInput(''); // Clear input since we'll process it after safety check
+      return;
+    }
+    
     setInput('');
 
     setMessages((prev) => [...prev, { sender: 'user', text: userText }]);
@@ -2157,6 +2177,18 @@ Comments: ${wo.comments}`;
     
     setActiveWorkOrder(null);
     setCurrentOptions([]);
+    
+    // Reset safety check for new session
+    setSafetyCheckCompleted(false);
+    setSafetyCheckItems([
+      { id: 1, label: 'I have read and understand the safety procedures', checked: false },
+      { id: 2, label: 'I am wearing appropriate personal protective equipment (PPE)', checked: false },
+      { id: 3, label: 'I have ensured the work area is safe and clear', checked: false },
+      { id: 4, label: 'I will follow all maintenance protocols and guidelines', checked: false }
+    ]);
+    setPendingUserMessage('');
+    setSafetyCheckDialogOpen(false);
+    
     addBotMessage(t('chat.flowReset'));
   };
 
@@ -2253,6 +2285,37 @@ Comments: ${wo.comments}`;
       addBotMessage(`❌ Error downloading AI report. Please try again.`);
     }
   };
+
+  // ======== SAFETY CHECK FUNCTIONS ========
+  const handleSafetyCheckToggle = (id: number) => {
+    setSafetyCheckItems(prev => 
+      prev.map(item => 
+        item.id === id ? { ...item, checked: !item.checked } : item
+      )
+    );
+  };
+
+  const isSafetyCheckComplete = () => {
+    return safetyCheckItems.every(item => item.checked);
+  };
+
+  const handleSafetyCheckConfirm = () => {
+    if (isSafetyCheckComplete()) {
+      setSafetyCheckCompleted(true);
+      setSafetyCheckDialogOpen(false);
+      
+      // Process the pending message
+      if (pendingUserMessage) {
+        setInput(pendingUserMessage);
+        setPendingUserMessage('');
+        // Use setTimeout to ensure the state update is processed
+        setTimeout(() => {
+          handleSend();
+        }, 100);
+      }
+    }
+  };
+  // ======== END SAFETY CHECK FUNCTIONS ========
 
   // ======== NEW FUNCTION: Save note from dialog using confirmed machine (dropdown) ========
   const handleSaveNote = async () => {
@@ -4159,6 +4222,253 @@ Comments: ${wo.comments}`;
         </Box>
       </Dialog>
       {/* ======================================================================= */}
+
+      {/* ===== SAFETY CHECK DIALOG ===== */}
+      <Dialog
+        open={safetyCheckDialogOpen}
+        onClose={() => {}} // Prevent closing without completing safety check
+        maxWidth="md"
+        fullWidth
+        disableEscapeKeyDown
+        sx={{
+          '& .MuiBackdrop-root': {
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            backdropFilter: 'blur(10px)',
+          }
+        }}
+      >
+        <Box sx={{ 
+          p: 4,
+          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.95) 100%)',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid rgba(239, 68, 68, 0.3)',
+          borderRadius: '16px',
+          boxShadow: '0 8px 32px rgba(239, 68, 68, 0.2)',
+          position: 'relative',
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: '6px',
+            background: 'linear-gradient(90deg, #ef4444, #f97316, #eab308)',
+            borderRadius: '16px 16px 0 0',
+          }
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+            <Box
+              sx={{
+                width: 48,
+                height: 48,
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #ef4444, #f97316)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                mr: 3,
+                boxShadow: '0 8px 24px rgba(239, 68, 68, 0.3)',
+              }}
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                <path d="M12,2L13.09,8.26L22,9L13.09,9.74L12,16L10.91,9.74L2,9L10.91,8.26L12,2Z" />
+              </svg>
+            </Box>
+            <Box>
+              <Typography 
+                variant="h5" 
+                sx={{ 
+                  color: '#1e293b',
+                  fontWeight: 700,
+                  mb: 1,
+                  fontSize: '1.5rem'
+                }}
+              >
+                🛡️ Safety Confirmation Required
+              </Typography>
+              <Typography 
+                variant="body1" 
+                sx={{ 
+                  color: 'rgba(30, 41, 59, 0.8)',
+                  fontSize: '1rem',
+                  lineHeight: 1.5
+                }}
+              >
+                Before proceeding with maintenance operations, please confirm all safety requirements
+              </Typography>
+            </Box>
+          </Box>
+
+          <Paper
+            sx={{
+              p: 3,
+              mb: 3,
+              background: 'rgba(254, 252, 232, 0.8)',
+              border: '1px solid rgba(245, 158, 11, 0.3)',
+              borderRadius: '12px',
+              boxShadow: '0 4px 12px rgba(245, 158, 11, 0.1)',
+            }}
+          >
+            <Typography 
+              variant="body1" 
+              sx={{ 
+                color: '#92400e',
+                fontWeight: 600,
+                mb: 2,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1
+              }}
+            >
+              ⚠️ Important Safety Notice
+            </Typography>
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                color: '#92400e',
+                lineHeight: 1.6
+              }}
+            >
+              This system provides maintenance guidance for coffee machines. Please ensure you have proper training, 
+              follow all safety protocols, and use appropriate personal protective equipment before performing any maintenance tasks.
+            </Typography>
+          </Paper>
+
+          <Typography 
+            variant="h6" 
+            sx={{ 
+              color: '#1e293b',
+              fontWeight: 600,
+              mb: 3,
+              fontSize: '1.1rem'
+            }}
+          >
+            Please confirm the following safety requirements:
+          </Typography>
+
+          <Box sx={{ mb: 4 }}>
+            {safetyCheckItems.map((item) => (
+              <Box
+                key={item.id}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  p: 2,
+                  mb: 2,
+                  borderRadius: '12px',
+                  border: item.checked 
+                    ? '2px solid rgba(34, 197, 94, 0.5)' 
+                    : '2px solid rgba(148, 163, 184, 0.3)',
+                  background: item.checked 
+                    ? 'rgba(34, 197, 94, 0.1)' 
+                    : 'rgba(255, 255, 255, 0.8)',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  cursor: 'pointer',
+                  '&:hover': {
+                    background: item.checked 
+                      ? 'rgba(34, 197, 94, 0.15)' 
+                      : 'rgba(248, 250, 252, 0.9)',
+                    transform: 'translateY(-2px)',
+                    boxShadow: item.checked 
+                      ? '0 8px 24px rgba(34, 197, 94, 0.2)' 
+                      : '0 8px 24px rgba(148, 163, 184, 0.15)',
+                  }
+                }}
+                onClick={() => handleSafetyCheckToggle(item.id)}
+              >
+                <Checkbox
+                  checked={item.checked}
+                  onChange={() => handleSafetyCheckToggle(item.id)}
+                  sx={{
+                    mr: 2,
+                    color: item.checked ? '#22c55e' : '#94a3b8',
+                    '&.Mui-checked': {
+                      color: '#22c55e',
+                    },
+                    '& .MuiSvgIcon-root': {
+                      fontSize: 24,
+                    }
+                  }}
+                />
+                <Typography 
+                  variant="body1" 
+                  sx={{ 
+                    color: item.checked ? '#065f46' : '#1e293b',
+                    fontWeight: item.checked ? 600 : 400,
+                    fontSize: '1rem',
+                    lineHeight: 1.5
+                  }}
+                >
+                  {item.label}
+                </Typography>
+                {item.checked && (
+                  <Box sx={{ ml: 'auto' }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="#22c55e">
+                      <path d="M9,20.42L2.79,14.21L5.62,11.38L9,14.77L18.88,4.88L21.71,7.71L9,20.42Z" />
+                    </svg>
+                  </Box>
+                )}
+              </Box>
+            ))}
+          </Box>
+
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            pt: 2,
+            borderTop: '1px solid rgba(148, 163, 184, 0.2)'
+          }}>
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                color: 'rgba(30, 41, 59, 0.6)',
+                fontStyle: 'italic'
+              }}
+            >
+              This confirmation is required once per session
+            </Typography>
+            <Button
+              variant="contained"
+              onClick={handleSafetyCheckConfirm}
+              disabled={!isSafetyCheckComplete()}
+              sx={{
+                px: 4,
+                py: 1.5,
+                borderRadius: '12px',
+                background: isSafetyCheckComplete() 
+                  ? 'linear-gradient(135deg, #22c55e, #16a34a)' 
+                  : 'rgba(148, 163, 184, 0.3)',
+                color: isSafetyCheckComplete() ? 'white' : 'rgba(100, 116, 139, 0.7)',
+                fontWeight: 600,
+                fontSize: '1rem',
+                textTransform: 'none',
+                boxShadow: isSafetyCheckComplete() 
+                  ? '0 8px 24px rgba(34, 197, 94, 0.4)' 
+                  : '0 4px 12px rgba(148, 163, 184, 0.2)',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                '&:hover': {
+                  background: isSafetyCheckComplete() 
+                    ? 'linear-gradient(135deg, #16a34a, #15803d)' 
+                    : 'rgba(148, 163, 184, 0.4)',
+                  transform: isSafetyCheckComplete() ? 'translateY(-2px) scale(1.05)' : 'none',
+                  boxShadow: isSafetyCheckComplete() 
+                    ? '0 12px 32px rgba(34, 197, 94, 0.5)' 
+                    : '0 4px 12px rgba(148, 163, 184, 0.2)',
+                },
+                '&:disabled': {
+                  background: 'rgba(148, 163, 184, 0.3)',
+                  color: 'rgba(100, 116, 139, 0.5)',
+                  cursor: 'not-allowed',
+                }
+              }}
+            >
+              {isSafetyCheckComplete() ? 'Continue to Chat' : 'Complete All Items'}
+            </Button>
+          </Box>
+        </Box>
+      </Dialog>
+      {/* ===== END SAFETY CHECK DIALOG ===== */}
 
     </Box>
   );
