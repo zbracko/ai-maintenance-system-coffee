@@ -2062,6 +2062,29 @@ const parseResponseForMedia = (text: string): { cleanText: string; images: strin
     }
   }
 
+  // Pattern 2b: Raw asset paths without parentheses
+  const rawAssetImg = /(\/assets\/[^\s)]+?\.(?:png|jpg|jpeg|svg|gif|webp))/gi;
+  while ((match = rawAssetImg.exec(text)) !== null) {
+    const src = match[1]?.trim();
+    if (src) {
+      images.push(src);
+      const alt = src.split('/').pop()?.replace(/[-_]/g, ' ').replace(/\.[^.]+$/, '');
+      imageMeta.push({ src, alt });
+    }
+  }
+
+  // Pattern 2c: HTML <img src="...">
+  const htmlImg = /<img[^>]*src=["'](\/[^"']+?\.(?:png|jpg|jpeg|svg|gif|webp))["'][^>]*>/gi;
+  while ((match = htmlImg.exec(text)) !== null) {
+    const src = match[1]?.trim();
+    if (src) {
+      images.push(src);
+      const alt = src.split('/').pop()?.replace(/[-_]/g, ' ').replace(/\.[^.]+$/, '');
+      imageMeta.push({ src, alt });
+      cleanText = cleanText.replace(match[0], '');
+    }
+  }
+
   // Pattern 3: Custom tag [image: /path | alt=Something descriptive]
   const customTag = /\[image:\s*(\/[^\]|]+)(?:\|\s*alt=(.+?))?\]/gi;
   while ((match = customTag.exec(text)) !== null) {
@@ -2098,6 +2121,20 @@ const extractVideosFromResponse = (text: string): string[] => {
   // Pattern 2: Parenthesis references ( /assets/file.mp4 )
   const parenVideoRegex = /\((\/assets\/[^)]+?\.(?:mp4|webm|ogg|mov))\)/gi;
   while ((match = parenVideoRegex.exec(text)) !== null) {
+    const src = match[1]?.trim();
+    if (src) videos.push(src);
+  }
+
+  // Pattern 2b: Raw asset paths
+  const rawAssetVid = /(\/assets\/[^\s)]+?\.(?:mp4|webm|ogg|mov))/gi;
+  while ((match = rawAssetVid.exec(text)) !== null) {
+    const src = match[1]?.trim();
+    if (src) videos.push(src);
+  }
+
+  // Pattern 2c: HTML <video src> or <source src>
+  const htmlVideo = /<(?:video|source)[^>]*src=["'](\/[^"']+?\.(?:mp4|webm|ogg|mov))["'][^>]*>/gi;
+  while ((match = htmlVideo.exec(text)) !== null) {
     const src = match[1]?.trim();
     if (src) videos.push(src);
   }
