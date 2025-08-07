@@ -839,10 +839,12 @@ const ChatInterface: React.FC = () => {
       timestamp: new Date().toISOString()
     }]);
     
-    // Check for safety triggers in bot messages
-    checkForSafetyTriggers(text);
-    if (images) {
-      images.forEach(image => checkForSafetyTriggers(image));
+    // Check for safety triggers in bot messages (but not from safety-related messages)
+    if (!text.includes('Safety Check') && !text.includes('safety verification')) {
+      checkForSafetyTriggers(text);
+      if (images) {
+        images.forEach(image => checkForSafetyTriggers(image));
+      }
     }
     
     // Handle dynamic conversation options
@@ -1739,13 +1741,20 @@ const ChatInterface: React.FC = () => {
           );
           
           // ======== SAFETY CHECK INTEGRATION FOR OPENAI RESPONSES ========
-          // Check for safety triggers in OpenAI response text
+          // Check for safety triggers in OpenAI response text (only for specific content)
           setTimeout(() => {
-            checkForSafetyTriggers(openAIResponse.text);
-            if (openAIResponse.images) {
-              openAIResponse.images.forEach(image => checkForSafetyTriggers(image));
+            // Only check for safety triggers if response contains specific maintenance content
+            if (openAIResponse.text && !openAIResponse.text.includes('Safety Check')) {
+              checkForSafetyTriggers(openAIResponse.text);
             }
-          }, 500); // Small delay to ensure message is rendered first
+            if (openAIResponse.images && openAIResponse.images.length > 0) {
+              openAIResponse.images.forEach(image => {
+                if (!grinderSafetyTriggered && !safetyCheckDialogOpen) {
+                  checkForSafetyTriggers(image);
+                }
+              });
+            }
+          }, 1000); // Longer delay to ensure message is fully rendered
           // ======== END SAFETY CHECK INTEGRATION ========
           
           // Update current options for button interactions
@@ -2431,6 +2440,14 @@ Comments: ${wo.comments}`;
     return safetyCheckItems.every(item => item.checked) && qrScanCompleted;
   };
 
+  // Manual reset function for grinder safety trigger
+  const resetGrinderSafetyTrigger = () => {
+    console.log('🔄 Manually resetting grinder safety trigger');
+    setGrinderSafetyTriggered(false);
+    setSafetyCheckDialogOpen(false);
+    setSafetyCheckCompleted(false);
+  };
+
   // ======== EVENT-BASED SAFETY TRIGGER ========
   const triggerEventSafetyCheck = (eventType: string) => {
     if (eventType === 'espresso-machine-cleaning') {
@@ -2441,6 +2458,9 @@ Comments: ${wo.comments}`;
       
       // Mark as triggered to prevent re-triggering
       setGrinderSafetyTriggered(true);
+      
+      // For grinder safety, we don't require QR scan - set as completed
+      setQrScanCompleted(true);
       
       // Set grinder-specific safety items
       setSafetyCheckItems([
@@ -2477,11 +2497,19 @@ Comments: ${wo.comments}`;
 
   // ======== CHECK FOR SAFETY TRIGGERS IN MESSAGES ========
   const checkForSafetyTriggers = (message: string) => {
+    // Prevent infinite loops - don't trigger safety checks from safety-related messages
+    if (message.includes('Safety Check Required') || 
+        message.includes('safety verification') ||
+        message.includes('safety protocols') ||
+        grinderSafetyTriggered || 
+        safetyCheckDialogOpen) {
+      return;
+    }
+    
     // Check if espresso-machine-cleaning.svg is mentioned or displayed
-    // Only trigger if not already triggered and dialog is not open
-    if (!grinderSafetyTriggered && !safetyCheckDialogOpen && 
-        (message.includes('espresso-machine-cleaning.svg') || 
-         message.toLowerCase().includes('espresso machine cleaning'))) {
+    if (message.includes('espresso-machine-cleaning.svg') || 
+        message.toLowerCase().includes('espresso machine cleaning')) {
+      console.log('🛡️ Safety trigger detected for:', message.substring(0, 50));
       setTimeout(() => {
         triggerEventSafetyCheck('espresso-machine-cleaning');
       }, 1500); // Delay to allow message to be displayed first
