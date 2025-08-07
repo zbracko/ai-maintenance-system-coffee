@@ -612,8 +612,8 @@ export const demoChatResponses = {
 
   // Maintenance Procedures
   "how do I clean the coffee machine": {
-    text: "Here's your complete coffee machine cleaning guide:\n\n🧽 **Daily Cleaning (20 minutes):**\n\n1. **Water System:** Empty and refill reservoir with fresh water\n2. **Grinder:** Empty grounds chamber, wipe burrs with dry cloth\n3. **Brewing System:** Clean portafilter, run water-only cycle\n4. **Steam Wand:** Purge and clean milk residue\n5. **Exterior:** Wipe control panel and surfaces\n\n📅 **Weekly Deep Clean (45 minutes):**\n\n1. **Descaling:** Use CM-DS-019 solution (1:10 ratio)\n2. **Grinder Deep Clean:** Remove and clean burr assembly\n3. **Internal Inspection:** Check heating elements and seals\n\nWould you like detailed steps for any specific cleaning procedure?",
-    images: ['daily_cleaning_steps.jpg', 'weekly_maintenance_chart.jpg'],
+    text: "Here's your complete coffee machine cleaning guide:\n\n🧽 **Daily Cleaning (20 minutes):**\n\n1. **Water System:** Empty and refill reservoir with fresh water\n2. **Grinder:** Empty grounds chamber, wipe burrs with dry cloth\n3. **Brewing System:** Clean portafilter, run water-only cycle\n4. **Steam Wand:** Purge and clean milk residue\n5. **Exterior:** Wipe control panel and surfaces\n\n📅 **Weekly Deep Clean (45 minutes):**\n\n1. **Descaling:** Use CM-DS-019 solution (1:10 ratio)\n2. **Grinder Deep Clean:** Remove and clean burr assembly\n3. **Internal Inspection:** Check heating elements and seals\n\n☕ **Espresso Machine Specific Cleaning:**\n\nFor comprehensive espresso machine maintenance, follow these specialized procedures that ensure both brewing quality and equipment longevity.\n\n⚠️ **SAFETY NOTE:** Some cleaning procedures may require additional safety verification when working with grinder components.\n\nWould you like detailed steps for any specific cleaning procedure?",
+    images: ['daily_cleaning_steps.jpg', 'weekly_maintenance_chart.jpg', '/assets/espresso-machine-cleaning.svg'],
     videos: ['complete_cleaning_procedure.mp4']
   },
 
@@ -627,6 +627,12 @@ export const demoChatResponses = {
     text: "Proper grinder maintenance ensures consistent grind and flavor:\n\n⚙️ **Grinder Cleaning Procedure:**\n\n**DAILY MAINTENANCE (5 minutes):**\n1. Empty hopper and grounds chamber\n2. Wipe exterior with damp cloth\n3. Check for coffee oil buildup\n4. Run few seconds empty to clear residue\n\n**WEEKLY DEEP CLEAN (20 minutes):**\n1. Disconnect power completely\n2. Remove upper burr assembly (turn counter-clockwise)\n3. Clean burrs with grinder brush\n4. Vacuum chamber of all coffee dust\n5. Check burr alignment and wear\n6. Reinstall and calibrate settings\n\n**MONTHLY TABLET CLEANING:**\n1. Use Grinder Cleaning Tablets (CM-GCT-020)\n2. Run tablets through as if grinding coffee\n3. Follow with small amount of coffee beans\n4. Discard first few grinds\n\n🔧 **Burr Replacement Signs:**\n• Inconsistent grind size\n• Excessive noise during grinding\n• Metallic taste in coffee\n• Visible wear on burr edges\n\n💰 **Replacement Parts:**\n• Upper Burr Set (CM-UB-004) - $34.99\n• Lower Burr Set (CM-LB-005) - $34.99\n• Cleaning Tablets (CM-GCT-020) - $24.99",
     images: ['/assets/coffee-grinder-operation.svg', '/assets/grinder-jam-clearing.svg'],
     videos: ['/assets/Cleaning_Grinder.mp4']
+  },
+
+  "espresso machine cleaning": {
+    text: "🔧 **Espresso Machine Deep Cleaning Protocol**\n\n⚠️ **IMPORTANT:** This procedure involves both espresso machine and grinder components.\n\n**📋 Step-by-Step Cleaning Process:**\n\n1. **Safety Preparation** - Ensure all equipment is properly disconnected\n2. **Grinder Inspection** - Check burr alignment and coffee residue\n3. **Portafilter Maintenance** - Deep clean brewing chamber\n4. **Steam System Cleaning** - Descale and sanitize steam wands\n5. **Final System Check** - Verify all components are properly reassembled\n\n**🛡️ SAFETY PROTOCOL:** Specialized safety verification required for grinder-related maintenance during espresso machine cleaning.\n\n**🎯 This comprehensive cleaning ensures optimal performance for both brewing and grinding systems.**\n\nProceeding with detailed cleaning instructions...",
+    images: ['/assets/espresso-machine-cleaning.svg', '/assets/steam-wand-cleaning.svg', '/assets/coffee-grinder-operation.svg'],
+    videos: ['espresso_deep_clean_demo.mp4']
   },
 
   // Temperature Issues

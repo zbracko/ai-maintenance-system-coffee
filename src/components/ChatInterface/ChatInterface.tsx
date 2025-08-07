@@ -28,6 +28,9 @@ import {
   useMediaQuery,
   useTheme,
   Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
   Checkbox,
   FormControlLabel,
   Select,
@@ -35,7 +38,8 @@ import {
   FormControl,
   IconButton,
   Chip,
-  CircularProgress
+  CircularProgress,
+  Avatar
 } from '@mui/material';
 
 import { Html5Qrcode, Html5QrcodeCameraScanConfig } from 'html5-qrcode';
@@ -48,6 +52,9 @@ import MicIcon from '@mui/icons-material/Mic';
 import ListAltIcon from '@mui/icons-material/ListAlt';
 import HistoryIcon from '@mui/icons-material/History';
 import NoteAddIcon from '@mui/icons-material/NoteAdd';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import ReportIcon from '@mui/icons-material/Report';
+import WarningIcon from '@mui/icons-material/Warning';
 
 // Import our chat session utilities
 import { saveChatSession, ChatSession, ChatMessage } from '../../utils/chatSessionUtils';
@@ -62,6 +69,17 @@ import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
+
+// ======== INTERFACES ========
+interface SafetyCheckItem {
+  id: number;
+  label: string;
+  checked: boolean;
+  icon: string;
+  image: string;
+  description?: string;
+}
+// ======== END INTERFACES ========
 
 import jsPDF from 'jspdf';
 
@@ -437,12 +455,79 @@ const ChatInterface: React.FC = () => {
   const [safetyCheckCompleted, setSafetyCheckCompleted] = useState<boolean>(false);
   const [safetyCheckDialogOpen, setSafetyCheckDialogOpen] = useState<boolean>(false);
   const [pendingUserMessage, setPendingUserMessage] = useState<string>('');
-  const [safetyCheckItems, setSafetyCheckItems] = useState([
-    { id: 1, label: 'I have read and understand the safety procedures', checked: false },
-    { id: 2, label: 'I am wearing appropriate personal protective equipment (PPE)', checked: false },
-    { id: 3, label: 'I have ensured the work area is safe and clear', checked: false },
-    { id: 4, label: 'I will follow all maintenance protocols and guidelines', checked: false }
+  const [safetyCheckItems, setSafetyCheckItems] = useState<SafetyCheckItem[]>([
+    { 
+      id: 1, 
+      label: 'I have read and understand the safety procedures', 
+      checked: false,
+      icon: '📋',
+      image: '/assets/Picture2.png',
+      description: 'Review all relevant safety documentation and procedures'
+    },
+    { 
+      id: 2, 
+      label: 'I am wearing appropriate personal protective equipment (PPE)', 
+      checked: false,
+      icon: '🥽',
+      image: '/assets/Picture3.png',
+      description: 'Safety glasses, gloves, and protective clothing are worn'
+    },
+    { 
+      id: 3, 
+      label: 'I have ensured the work area is safe and clear', 
+      checked: false,
+      icon: '🧹',
+      image: '/assets/Picture4.png',
+      description: 'Clear pathways, proper lighting, and emergency access'
+    },
+    { 
+      id: 4, 
+      label: 'I will follow all maintenance protocols and guidelines', 
+      checked: false,
+      icon: '⚙️',
+      image: '/assets/Picture5.png',
+      description: 'Strict adherence to established maintenance procedures'
+    }
   ]);
+  
+  // ======== QR SCAN & PPE REPORTING STATE ========
+  const [qrScanRequired, setQrScanRequired] = useState<boolean>(true);
+  const [qrScanCompleted, setQrScanCompleted] = useState<boolean>(false);
+  const [safetyQrScannerOpen, setSafetyQrScannerOpen] = useState<boolean>(false);
+  const [reportPpeDialogOpen, setReportPpeDialogOpen] = useState<boolean>(false);
+  const [ppeReport, setPpeReport] = useState({
+    location: '',
+    missingPpe: [] as string[],
+    damageType: '',
+    notes: '',
+    urgency: 'Medium'
+  });
+  
+  const ppeOptions = [
+    'Safety Glasses/Goggles',
+    'Heat-Resistant Gloves', 
+    'Non-Slip Shoes',
+    'Apron/Protective Clothing',
+    'Hard Hat/Bump Cap',
+    'First Aid Kit',
+    'Fire Extinguisher',
+    'Emergency Eyewash Station',
+    'Safety Signs/Labels',
+    'Lockout/Tagout Equipment'
+  ];
+  
+  const locationOptions = [
+    'Espresso Machine #001 (Front Counter)',
+    'Coffee Maker #002 (Back Station)', 
+    'Grinder #003 (Left Counter)',
+    'Steam Wand #004 (Right Station)',
+    'Bean Hopper #005 (Storage Area)',
+    'General Kitchen Area',
+    'Storage Room',
+    'Break Room',
+    'Manager Office',
+    'Employee Entrance'
+  ];
   
   // Initialize session tracking when component mounts
   useEffect(() => {
@@ -752,6 +837,12 @@ const ChatInterface: React.FC = () => {
       text,
       timestamp: new Date().toISOString()
     }]);
+    
+    // Check for safety triggers in bot messages
+    checkForSafetyTriggers(text);
+    if (images) {
+      images.forEach(image => checkForSafetyTriggers(image));
+    }
     
     // Handle dynamic conversation options
     if (options && options.length > 0) {
@@ -1646,6 +1737,16 @@ const ChatInterface: React.FC = () => {
             openAIResponse.options || []
           );
           
+          // ======== SAFETY CHECK INTEGRATION FOR OPENAI RESPONSES ========
+          // Check for safety triggers in OpenAI response text
+          setTimeout(() => {
+            checkForSafetyTriggers(openAIResponse.text);
+            if (openAIResponse.images) {
+              openAIResponse.images.forEach(image => checkForSafetyTriggers(image));
+            }
+          }, 500); // Small delay to ensure message is rendered first
+          // ======== END SAFETY CHECK INTEGRATION ========
+          
           // Update current options for button interactions
           if (openAIResponse.options) {
             setCurrentOptions(openAIResponse.options);
@@ -2181,11 +2282,40 @@ Comments: ${wo.comments}`;
     // Reset safety check for new session
     setSafetyCheckCompleted(false);
     setSafetyCheckItems([
-      { id: 1, label: 'I have read and understand the safety procedures', checked: false },
-      { id: 2, label: 'I am wearing appropriate personal protective equipment (PPE)', checked: false },
-      { id: 3, label: 'I have ensured the work area is safe and clear', checked: false },
-      { id: 4, label: 'I will follow all maintenance protocols and guidelines', checked: false }
+      { 
+        id: 1, 
+        label: 'I have read and understand the safety procedures', 
+        checked: false,
+        icon: '📋',
+        image: '/assets/troubleshooting-guide.svg',
+        description: 'Review all relevant safety documentation and procedures'
+      },
+      { 
+        id: 2, 
+        label: 'I am wearing appropriate personal protective equipment (PPE)', 
+        checked: false,
+        icon: '🦺',
+        image: '/assets/Picture2.png',
+        description: 'Safety glasses, gloves, and protective clothing are worn'
+      },
+      { 
+        id: 3, 
+        label: 'I have ensured the work area is safe and clear', 
+        checked: false,
+        icon: '🏗️',
+        image: '/assets/Picture3.png',
+        description: 'Clear pathways, proper lighting, and emergency access'
+      },
+      { 
+        id: 4, 
+        label: 'I will follow all maintenance protocols and guidelines', 
+        checked: false,
+        icon: '✅',
+        image: '/assets/Picture4.png',
+        description: 'Strict adherence to established maintenance procedures'
+      }
     ]);
+    setQrScanCompleted(false);
     setPendingUserMessage('');
     setSafetyCheckDialogOpen(false);
     
@@ -2296,7 +2426,55 @@ Comments: ${wo.comments}`;
   };
 
   const isSafetyCheckComplete = () => {
-    return safetyCheckItems.every(item => item.checked);
+    return safetyCheckItems.every(item => item.checked) && qrScanCompleted;
+  };
+
+  // ======== EVENT-BASED SAFETY TRIGGER ========
+  const triggerEventSafetyCheck = (eventType: string) => {
+    if (eventType === 'espresso-machine-cleaning') {
+      // Reset safety state for event-based check
+      setQrScanCompleted(false);
+      setSafetyCheckItems([
+        {
+          id: 1,
+          label: 'I have disconnected the coffee grinder from power source',
+          checked: false,
+          icon: '🔌',
+          image: '/assets/coffee-grinder-operation.svg',
+          description: 'Ensure grinder is completely powered off and unplugged'
+        },
+        {
+          id: 2,
+          label: 'I have verified the grinder burrs are cool and safe to handle',
+          checked: false,
+          icon: '🌡️',
+          image: '/assets/grinder-jam-clearing.svg',
+          description: 'Allow grinder components to cool down before maintenance'
+        }
+      ]);
+      
+      // Show safety dialog for this specific event
+      setSafetyCheckCompleted(false);
+      setSafetyCheckDialogOpen(true);
+      
+      addBotMessage(
+        `🛡️ **Safety Check Required**\n\n` +
+        `Coffee grinder maintenance detected. Before proceeding with espresso machine cleaning, ` +
+        `please complete the mandatory safety verification for grinder-related operations.\n\n` +
+        `This ensures safe handling of both espresso machine and grinder components during maintenance.`
+      );
+    }
+  };
+
+  // ======== CHECK FOR SAFETY TRIGGERS IN MESSAGES ========
+  const checkForSafetyTriggers = (message: string) => {
+    // Check if espresso-machine-cleaning.svg is mentioned or displayed
+    if (message.includes('espresso-machine-cleaning.svg') || 
+        message.toLowerCase().includes('espresso machine cleaning')) {
+      setTimeout(() => {
+        triggerEventSafetyCheck('espresso-machine-cleaning');
+      }, 1500); // Delay to allow message to be displayed first
+    }
   };
 
   const handleSafetyCheckConfirm = () => {
@@ -2304,16 +2482,127 @@ Comments: ${wo.comments}`;
       setSafetyCheckCompleted(true);
       setSafetyCheckDialogOpen(false);
       
-      // Process the pending message
-      if (pendingUserMessage) {
-        setInput(pendingUserMessage);
-        setPendingUserMessage('');
-        // Use setTimeout to ensure the state update is processed
+      // Check if this was an event-based safety check
+      const isEventBasedCheck = safetyCheckItems.length === 2 && 
+        safetyCheckItems.some(item => item.label.includes('coffee grinder'));
+      
+      if (isEventBasedCheck) {
+        // This was a grinder safety check triggered by espresso machine cleaning
+        addBotMessage(
+          `✅ **Grinder Safety Check Complete**\n\n` +
+          `Coffee grinder safety protocols verified. You may now proceed with the espresso machine cleaning procedure.\n\n` +
+          `**Remember:** Both grinder and espresso machine components should be handled with care during maintenance operations.`
+        );
+        
+        // Reset to default safety check items for future use
         setTimeout(() => {
-          handleSend();
-        }, 100);
+          setSafetyCheckItems([
+            { 
+              id: 1, 
+              label: 'I have read and understand the safety procedures', 
+              checked: false,
+              icon: '📋',
+              image: '/assets/Picture2.png',
+              description: 'Review all relevant safety documentation and procedures'
+            },
+            { 
+              id: 2, 
+              label: 'I am wearing appropriate personal protective equipment (PPE)', 
+              checked: false,
+              icon: '🥽',
+              image: '/assets/Picture3.png',
+              description: 'Safety glasses, gloves, and protective clothing are worn'
+            },
+            { 
+              id: 3, 
+              label: 'I have ensured the work area is safe and clear', 
+              checked: false,
+              icon: '🧹',
+              image: '/assets/Picture4.png',
+              description: 'Clear pathways, proper lighting, and emergency access'
+            },
+            { 
+              id: 4, 
+              label: 'I will follow all maintenance protocols and guidelines', 
+              checked: false,
+              icon: '⚙️',
+              image: '/assets/Picture5.png',
+              description: 'Strict adherence to established maintenance procedures'
+            }
+          ]);
+          setQrScanCompleted(false);
+        }, 1000);
+      } else {
+        // This was the initial safety check
+        // Process the pending message
+        if (pendingUserMessage) {
+          setInput(pendingUserMessage);
+          setPendingUserMessage('');
+          // Use setTimeout to ensure the state update is processed
+          setTimeout(() => {
+            handleSend();
+          }, 100);
+        }
       }
     }
+  };
+
+  const handleSafetyQrScan = () => {
+    setSafetyQrScannerOpen(true);
+  };
+
+  const handleSafetyQrScanComplete = (scannedData: string) => {
+    // Simulate QR code validation for safety equipment
+    if (scannedData.includes('SAFETY-EQUIPMENT') || scannedData.includes('PPE-STATION')) {
+      setQrScanCompleted(true);
+      setSafetyQrScannerOpen(false);
+      addBotMessage(`✅ Safety equipment verified: ${scannedData}\n\nPPE station is properly stocked and accessible. You may now proceed with maintenance tasks.`);
+    } else {
+      alert('Invalid safety equipment QR code. Please scan the QR code located on the PPE station or safety equipment cabinet.');
+    }
+  };
+
+  const handleReportPpe = () => {
+    setReportPpeDialogOpen(true);
+  };
+
+  const handleSubmitPpeReport = () => {
+    if (!ppeReport.location || ppeReport.missingPpe.length === 0) {
+      alert('Please select a location and at least one missing PPE item.');
+      return;
+    }
+
+    // Submit PPE report (demo mode)
+    const reportId = `PPE-${Date.now()}`;
+    addBotMessage(
+      `🚨 **PPE Report Submitted: ${reportId}**\n\n` +
+      `📍 **Location:** ${ppeReport.location}\n` +
+      `⚠️ **Missing/Damaged PPE:** ${ppeReport.missingPpe.join(', ')}\n` +
+      `🔄 **Issue Type:** ${ppeReport.damageType}\n` +
+      `⏰ **Urgency:** ${ppeReport.urgency}\n` +
+      `📝 **Notes:** ${ppeReport.notes || 'None provided'}\n\n` +
+      `Your PPE report has been submitted to facility management. ` +
+      `Safety equipment replacement has been prioritized based on urgency level.`
+    );
+
+    // Reset form and close dialog
+    setPpeReport({
+      location: '',
+      missingPpe: [],
+      damageType: '',
+      notes: '',
+      urgency: 'Medium'
+    });
+    setReportPpeDialogOpen(false);
+  };
+
+  const handlePpeItemToggle = (item: string) => {
+    setPpeReport(prev => ({
+      ...prev,
+      missingPpe: prev.missingPpe.includes(item)
+        ? prev.missingPpe.filter(ppe => ppe !== item)
+        : [...prev.missingPpe, item]
+    }));
   };
   // ======== END SAFETY CHECK FUNCTIONS ========
 
@@ -4223,7 +4512,7 @@ Comments: ${wo.comments}`;
       </Dialog>
       {/* ======================================================================= */}
 
-      {/* ===== SAFETY CHECK DIALOG ===== */}
+      {/* ===== ENHANCED SAFETY CHECK DIALOG ===== */}
       <Dialog
         open={safetyCheckDialogOpen}
         onClose={() => {}} // Prevent closing without completing safety check
@@ -4284,7 +4573,7 @@ Comments: ${wo.comments}`;
                   fontSize: '1.5rem'
                 }}
               >
-                🛡️ Safety Confirmation Required
+                🛡️ Enhanced Safety Verification
               </Typography>
               <Typography 
                 variant="body1" 
@@ -4294,7 +4583,7 @@ Comments: ${wo.comments}`;
                   lineHeight: 1.5
                 }}
               >
-                Before proceeding with maintenance operations, please confirm all safety requirements
+                Complete safety checks, equipment verification, and PPE availability before maintenance
               </Typography>
             </Box>
           </Box>
@@ -4346,13 +4635,14 @@ Comments: ${wo.comments}`;
             Please confirm the following safety requirements:
           </Typography>
 
+          {/* Safety Check Items with Pictures */}
           <Box sx={{ mb: 4 }}>
             {safetyCheckItems.map((item) => (
               <Box
                 key={item.id}
                 sx={{
                   display: 'flex',
-                  alignItems: 'center',
+                  alignItems: 'flex-start',
                   p: 2,
                   mb: 2,
                   borderRadius: '12px',
@@ -4381,6 +4671,7 @@ Comments: ${wo.comments}`;
                   onChange={() => handleSafetyCheckToggle(item.id)}
                   sx={{
                     mr: 2,
+                    mt: 0.5,
                     color: item.checked ? '#22c55e' : '#94a3b8',
                     '&.Mui-checked': {
                       color: '#22c55e',
@@ -4390,27 +4681,178 @@ Comments: ${wo.comments}`;
                     }
                   }}
                 />
-                <Typography 
-                  variant="body1" 
-                  sx={{ 
-                    color: item.checked ? '#065f46' : '#1e293b',
-                    fontWeight: item.checked ? 600 : 400,
-                    fontSize: '1rem',
-                    lineHeight: 1.5
-                  }}
-                >
-                  {item.label}
-                </Typography>
-                {item.checked && (
-                  <Box sx={{ ml: 'auto' }}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="#22c55e">
-                      <path d="M9,20.42L2.79,14.21L5.62,11.38L9,14.77L18.88,4.88L21.71,7.71L9,20.42Z" />
-                    </svg>
+                
+                <Box sx={{ flex: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                    <Avatar sx={{ 
+                      bgcolor: item.checked ? '#22c55e' : '#f97316',
+                      width: 32,
+                      height: 32,
+                      mr: 2
+                    }}>
+                      {item.icon}
+                    </Avatar>
+                    <Typography 
+                      variant="body1" 
+                      sx={{ 
+                        color: item.checked ? '#065f46' : '#1e293b',
+                        fontWeight: item.checked ? 600 : 500,
+                        fontSize: '1rem',
+                        lineHeight: 1.5,
+                        flex: 1
+                      }}
+                    >
+                      {item.label}
+                    </Typography>
+                    {item.checked && (
+                      <Box sx={{ ml: 'auto' }}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="#22c55e">
+                          <path d="M9,20.42L2.79,14.21L5.62,11.38L9,14.77L18.88,4.88L21.71,7.71L9,20.42Z" />
+                        </svg>
+                      </Box>
+                    )}
                   </Box>
-                )}
+                  
+                  {item.description && (
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        color: 'rgba(30, 41, 59, 0.7)',
+                        mb: 1,
+                        ml: 6
+                      }}
+                    >
+                      {item.description}
+                    </Typography>
+                  )}
+                  
+                  {item.image && (
+                    <Box sx={{ ml: 6, mt: 1 }}>
+                      <img 
+                        src={item.image} 
+                        alt={item.label}
+                        style={{ 
+                          width: '120px', 
+                          height: '90px', 
+                          objectFit: 'cover',
+                          borderRadius: '8px',
+                          border: '2px solid #e5e7eb',
+                          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+                        }} 
+                      />
+                    </Box>
+                  )}
+                </Box>
               </Box>
             ))}
           </Box>
+
+          {/* QR Code Scanning Section */}
+          <Paper sx={{ 
+            p: 3, 
+            mb: 3, 
+            border: qrScanCompleted ? '2px solid #22c55e' : '2px solid #f97316',
+            borderRadius: '12px',
+            background: qrScanCompleted 
+              ? 'rgba(34, 197, 94, 0.1)' 
+              : 'rgba(249, 115, 22, 0.1)',
+          }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <QrCodeScannerIcon sx={{ mr: 2, color: qrScanCompleted ? '#22c55e' : '#f97316' }} />
+              <Typography 
+                variant="h6" 
+                sx={{ 
+                  color: qrScanCompleted ? '#065f46' : '#c2410c',
+                  fontWeight: 600,
+                  fontSize: '1.1rem'
+                }}
+              >
+                Equipment Verification {qrScanCompleted ? '✅' : '⏳'}
+              </Typography>
+            </Box>
+            
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                color: qrScanCompleted ? '#065f46' : '#c2410c',
+                mb: 2,
+                lineHeight: 1.6
+              }}
+            >
+              Scan the QR code on your PPE station or safety equipment cabinet to verify availability and accessibility
+            </Typography>
+            
+            {qrScanCompleted ? (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#22c55e' }}>
+                <CheckCircleIcon />
+                <Typography variant="body1" fontWeight="bold">
+                  Safety equipment verified and accessible
+                </Typography>
+              </Box>
+            ) : (
+              <Button
+                variant="contained"
+                onClick={handleSafetyQrScan}
+                startIcon={<QrCodeScannerIcon />}
+                sx={{ 
+                  background: 'linear-gradient(135deg, #f97316, #ea580c)',
+                  '&:hover': {
+                    background: 'linear-gradient(135deg, #ea580c, #dc2626)',
+                  }
+                }}
+              >
+                Scan Safety Equipment QR Code
+              </Button>
+            )}
+          </Paper>
+
+          {/* PPE Reporting Section */}
+          <Paper sx={{ 
+            p: 2, 
+            mb: 3,
+            border: '1px solid rgba(239, 68, 68, 0.3)',
+            borderRadius: '12px',
+            background: 'rgba(239, 68, 68, 0.05)',
+          }}>
+            <Typography 
+              variant="body1" 
+              sx={{ 
+                color: '#dc2626',
+                fontWeight: 600,
+                mb: 2,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1
+              }}
+            >
+              🚨 PPE Issue Reporting
+            </Typography>
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                color: '#7f1d1d',
+                mb: 2,
+                lineHeight: 1.6
+              }}
+            >
+              If you notice any missing, damaged, or inadequate personal protective equipment, please report it immediately
+            </Typography>
+            <Button
+              variant="outlined"
+              onClick={handleReportPpe}
+              startIcon={<ReportIcon />}
+              sx={{ 
+                borderColor: '#dc2626',
+                color: '#dc2626',
+                '&:hover': {
+                  borderColor: '#b91c1c',
+                  backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                }
+              }}
+            >
+              Report Missing or Damaged PPE
+            </Button>
+          </Paper>
 
           <Box sx={{ 
             display: 'flex', 
@@ -4463,12 +4905,231 @@ Comments: ${wo.comments}`;
                 }
               }}
             >
-              {isSafetyCheckComplete() ? 'Continue to Chat' : 'Complete All Items'}
+              {isSafetyCheckComplete() ? 'Continue to Chat' : `Complete All Requirements (${safetyCheckItems.filter(item => item.checked).length + (qrScanCompleted ? 1 : 0)}/${safetyCheckItems.length + 1})`}
             </Button>
           </Box>
         </Box>
       </Dialog>
-      {/* ===== END SAFETY CHECK DIALOG ===== */}
+      
+      {/* ===== QR SCANNER DIALOG ===== */}
+      <Dialog
+        open={safetyQrScannerOpen}
+        onClose={() => setSafetyQrScannerOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ 
+          backgroundColor: '#f97316', 
+          color: 'white', 
+          textAlign: 'center',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 2
+        }}>
+          <QrCodeScannerIcon sx={{ fontSize: 30 }} />
+          Scan Safety Equipment QR Code
+        </DialogTitle>
+        
+        <DialogContent sx={{ padding: 3, textAlign: 'center' }}>
+          <Typography variant="h6" gutterBottom sx={{ color: '#c2410c' }}>
+            📱 QR Code Scanner
+          </Typography>
+          
+          <Box sx={{ 
+            border: '3px dashed #f97316', 
+            borderRadius: 2, 
+            p: 4, 
+            mb: 3,
+            backgroundColor: 'rgba(249, 115, 22, 0.1)'
+          }}>
+            <QrCodeScannerIcon sx={{ fontSize: 80, color: '#f97316', mb: 2 }} />
+            <Typography variant="body1" gutterBottom>
+              Position your camera over the QR code on:
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#7c2d12' }}>
+              • PPE Station Cabinet<br/>
+              • Safety Equipment Storage<br/>
+              • Emergency Equipment Box
+            </Typography>
+          </Box>
+
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Demo Mode: Click "Simulate Scan" to continue
+          </Typography>
+          
+          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
+            <Button
+              variant="contained"
+              onClick={() => handleSafetyQrScanComplete('SAFETY-EQUIPMENT-STATION-001')}
+              sx={{ 
+                backgroundColor: '#22c55e',
+                '&:hover': { backgroundColor: '#16a34a' }
+              }}
+            >
+              ✅ Simulate Successful Scan
+            </Button>
+            <Button
+              variant="outlined"
+              onClick={() => setSafetyQrScannerOpen(false)}
+              sx={{ 
+                borderColor: '#6b7280',
+                color: '#6b7280'
+              }}
+            >
+              Cancel
+            </Button>
+          </Box>
+        </DialogContent>
+      </Dialog>
+
+      {/* ===== PPE REPORT DIALOG ===== */}
+      <Dialog
+        open={reportPpeDialogOpen}
+        onClose={() => setReportPpeDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle sx={{ 
+          backgroundColor: '#dc2626', 
+          color: 'white', 
+          textAlign: 'center',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 2
+        }}>
+          <ReportIcon sx={{ fontSize: 30 }} />
+          Report Missing or Damaged PPE
+        </DialogTitle>
+        
+        <DialogContent sx={{ padding: 3 }}>
+          <Typography variant="h6" gutterBottom sx={{ color: '#dc2626', mb: 3 }}>
+            🚨 PPE Issue Report Form
+          </Typography>
+          
+          {/* Location Selection */}
+          <FormControl fullWidth sx={{ mb: 3 }}>
+            <InputLabel>Location/Area *</InputLabel>
+            <Select
+              value={ppeReport.location}
+              onChange={(e) => setPpeReport(prev => ({ ...prev, location: e.target.value }))}
+              label="Location/Area *"
+            >
+              {locationOptions.map((location) => (
+                <MenuItem key={location} value={location}>{location}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          {/* PPE Items Selection */}
+          <Typography variant="subtitle1" gutterBottom sx={{ color: '#dc2626', fontWeight: 600 }}>
+            Missing or Damaged PPE Items: *
+          </Typography>
+          <Box sx={{ 
+            border: '1px solid #e5e7eb', 
+            borderRadius: 2, 
+            p: 2, 
+            mb: 3,
+            maxHeight: '200px',
+            overflowY: 'auto'
+          }}>
+            {ppeOptions.map((ppe) => (
+              <FormControlLabel
+                key={ppe}
+                control={
+                  <Checkbox
+                    checked={ppeReport.missingPpe.includes(ppe)}
+                    onChange={() => handlePpeItemToggle(ppe)}
+                    color="error"
+                  />
+                }
+                label={ppe}
+                sx={{ 
+                  display: 'block', 
+                  mb: 1,
+                  '& .MuiFormControlLabel-label': {
+                    fontSize: '0.95rem'
+                  }
+                }}
+              />
+            ))}
+          </Box>
+
+          {/* Issue Type */}
+          <FormControl fullWidth sx={{ mb: 3 }}>
+            <InputLabel>Issue Type</InputLabel>
+            <Select
+              value={ppeReport.damageType}
+              onChange={(e) => setPpeReport(prev => ({ ...prev, damageType: e.target.value }))}
+              label="Issue Type"
+            >
+              <MenuItem value="Missing">Missing/Not Available</MenuItem>
+              <MenuItem value="Damaged">Damaged/Broken</MenuItem>
+              <MenuItem value="Insufficient">Insufficient Quantity</MenuItem>
+              <MenuItem value="Expired">Expired/Out of Date</MenuItem>
+              <MenuItem value="Wrong Size">Wrong Size Available</MenuItem>
+              <MenuItem value="Poor Quality">Poor Quality/Worn Out</MenuItem>
+            </Select>
+          </FormControl>
+
+          {/* Urgency Level */}
+          <FormControl fullWidth sx={{ mb: 3 }}>
+            <InputLabel>Urgency Level</InputLabel>
+            <Select
+              value={ppeReport.urgency}
+              onChange={(e) => setPpeReport(prev => ({ ...prev, urgency: e.target.value }))}
+              label="Urgency Level"
+            >
+              <MenuItem value="Low">Low - Can wait for next scheduled order</MenuItem>
+              <MenuItem value="Medium">Medium - Needed within this week</MenuItem>
+              <MenuItem value="High">High - Needed within 24 hours</MenuItem>
+              <MenuItem value="Critical">Critical - Immediate replacement required</MenuItem>
+            </Select>
+          </FormControl>
+
+          {/* Additional Notes */}
+          <TextField
+            fullWidth
+            multiline
+            rows={3}
+            label="Additional Notes (Optional)"
+            value={ppeReport.notes}
+            onChange={(e) => setPpeReport(prev => ({ ...prev, notes: e.target.value }))}
+            placeholder="Describe the issue in more detail, specify quantities needed, or provide any other relevant information..."
+            sx={{ mb: 2 }}
+          />
+
+          <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+            Your report will be submitted to facility management and safety coordinators for immediate action.
+          </Typography>
+        </DialogContent>
+        
+        <DialogActions sx={{ padding: 2, justifyContent: 'space-between' }}>
+          <Button
+            onClick={() => setReportPpeDialogOpen(false)}
+            variant="outlined"
+            sx={{ 
+              borderColor: '#6b7280',
+              color: '#6b7280'
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSubmitPpeReport}
+            variant="contained"
+            disabled={!ppeReport.location || ppeReport.missingPpe.length === 0}
+            sx={{ 
+              backgroundColor: '#dc2626',
+              '&:hover': { backgroundColor: '#b91c1c' },
+              '&:disabled': { backgroundColor: '#9ca3af' }
+            }}
+          >
+            🚨 Submit PPE Report
+          </Button>
+        </DialogActions>
+      </Dialog>
 
     </Box>
   );
